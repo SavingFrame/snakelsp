@@ -18,7 +18,7 @@ func HandleDidOpen(c *Context) (interface{}, error) {
 	if data.TextDocument.LanguageID != "python" {
 		return nil, nil
 	}
-	workspace.OpenFiles.Store(data.TextDocument.URI, data.TextDocument.Text)
+	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text)
 
 	c.Logger.Debug("Content after get")
 	c.Logger.Debug(data.TextDocument.Text)
@@ -101,6 +101,10 @@ func HandleDidClose(c *Context) (interface{}, error) {
 		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
-	workspace.OpenFiles.Delete(data.TextDocument.URI)
+	file, err := workspace.GetPythonFile(data.TextDocument.URI)
+	if err != nil {
+		return nil, err
+	}
+	file.CloseFile()
 	return nil, nil
 }

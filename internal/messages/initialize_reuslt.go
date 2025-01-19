@@ -36,7 +36,8 @@ type textDocumentSyncOptions struct {
 }
 
 type serverCapabilities struct {
-	TextDocumentSync *textDocumentSyncOptions `json:"textDocumentSync"`
+	TextDocumentSync   *textDocumentSyncOptions `json:"textDocumentSync"`
+	DefinitionProvider bool                     `json:"definitionProvider"`
 }
 
 type InitializeResult struct {
@@ -51,6 +52,7 @@ func NewInitializeResult() *InitializeResult {
 				OpenClose: true,
 				Change:    TextDocumentSyncKindIncremental,
 			},
+			DefinitionProvider: true,
 		},
 		ServerInfo: &serverInfo{
 			Name:    "SnakeLSP",

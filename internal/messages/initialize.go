@@ -1,5 +1,9 @@
 package messages
 
+type InitializationOptionsParams struct {
+	VirtualEnvPath string `json:"settings.virtualenv_path"`
+}
+
 type InitializeParams struct {
 	WorkDoneProgressParams
 
@@ -60,7 +64,7 @@ type InitializeParams struct {
 	/**
 	 * User provided initialization options.
 	 */
-	InitializationOptions any `json:"initializationOptions,omitempty"`
+	InitializationOptions *InitializationOptionsParams `json:"initializationOptions,omitempty"`
 
 	/**
 	 * The capabilities provided by the client (editor or tool)
