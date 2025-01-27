@@ -36,8 +36,9 @@ type textDocumentSyncOptions struct {
 }
 
 type serverCapabilities struct {
-	TextDocumentSync   *textDocumentSyncOptions `json:"textDocumentSync"`
-	DefinitionProvider bool                     `json:"definitionProvider"`
+	TextDocumentSync        *textDocumentSyncOptions `json:"textDocumentSync"`
+	DefinitionProvider      bool                     `json:"definitionProvider"`
+	WorkspaceSymbolProvider bool                     `json:"workspaceSymbolProvider"`
 }
 
 type InitializeResult struct {

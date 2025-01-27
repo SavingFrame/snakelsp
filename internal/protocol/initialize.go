@@ -19,6 +19,7 @@ func HandleInitialize(c *Context) (interface{}, error) {
 	}
 	workspace.ClientSettings = *userSettings
 
+	workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath)
 	initializeResult := messages.NewInitializeResult()
 	return initializeResult, nil
 	// context.Connection.Reply(ctx context.Context, id jsonrpc2.ID, result interface{})
