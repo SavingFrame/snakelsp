@@ -75,10 +75,14 @@ func HandleDidChange(c *Context) (interface{}, error) {
 		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
-	content, _ := workspace.OpenFiles.Load(data.TextDocument.URI)
+	pythonFile, err := workspace.GetPythonFile(data.TextDocument.URI)
+	if err != nil {
+		return nil, err
+	}
+	content := pythonFile.Text
 	for _, change := range data.ContentChanges {
 		content = applyChange(
-			content.(string),
+			content,
 			change.Range.Start.Line,
 			change.Range.Start.Character,
 			change.Range.End.Line,
@@ -87,9 +91,10 @@ func HandleDidChange(c *Context) (interface{}, error) {
 			c.Logger,
 		)
 	}
-	workspace.OpenFiles.Store(data.TextDocument.URI, content)
+	pythonFile.Text = content
+	workspace.OpenFiles.Store(data.TextDocument.URI, pythonFile)
 	c.Logger.Debug("Content after change")
-	c.Logger.Debug(content.(string))
+	c.Logger.Debug(pythonFile.Text)
 
 	return nil, nil
 }
