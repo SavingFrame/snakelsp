@@ -69,6 +69,6 @@ func createLogger(writer io.Writer, debug bool) *slog.Logger {
 		programLevel.Set(slog.LevelDebug)
 	}
 	logger := slog.New(handler)
-	// slog.SetDefault(logger)
+	slog.SetDefault(logger)
 	return logger
 }
