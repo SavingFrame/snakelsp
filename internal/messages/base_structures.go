@@ -98,3 +98,10 @@ type PartialResultParams struct {
 	 */
 	PartialResultToken *ProgressToken `json:"partialResultToken,omitempty"`
 }
+
+// https://microsoft.github.io/language-server-protocol/specifications/specification-3-16#location
+
+type Location struct {
+	URI   DocumentUri `json:"uri"`
+	Range Range       `json:"range"`
+}

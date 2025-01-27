@@ -53,7 +53,8 @@ func NewInitializeResult() *InitializeResult {
 				OpenClose: true,
 				Change:    TextDocumentSyncKindIncremental,
 			},
-			DefinitionProvider: true,
+			DefinitionProvider:      true,
+			WorkspaceSymbolProvider: true,
 		},
 		ServerInfo: &serverInfo{
 			Name:    "SnakeLSP",

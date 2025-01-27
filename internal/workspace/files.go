@@ -16,7 +16,7 @@ var OpenFiles sync.Map
 var ProjectFiles sync.Map
 
 type PythonFile struct {
-	url     string
+	Url     string
 	Text    string
 	astTree *tree_sitter.Tree
 	astRoot *tree_sitter.Node
@@ -56,7 +56,7 @@ func GetPythonFile(url string) (*PythonFile, error) {
 
 func NewPythonFile(url string, text string) *PythonFile {
 	pythonFile := &PythonFile{
-		url:  url,
+		Url:  url,
 		Text: text,
 	}
 	OpenFiles.Store(url, pythonFile)
@@ -102,5 +102,5 @@ func (p *PythonFile) ExtractTextFromNode(node *tree_sitter.Node) string {
 
 func (p *PythonFile) CloseFile() {
 	p.astTree.Close()
-	OpenFiles.Delete(p.url)
+	OpenFiles.Delete(p.Url)
 }

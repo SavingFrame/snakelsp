@@ -10,4 +10,5 @@ var Handlers = map[string]RequestHandler{
 	"textDocument/didClose":   HandleDidClose,
 	"shutdown":                HandleShutdown,
 	"textDocument/definition": HandleGotoDefinition,
+	"workspace/symbol":        HandleWorkspaceSymbol,
 }
