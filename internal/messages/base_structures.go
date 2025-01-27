@@ -77,3 +77,24 @@ const (
 	TraceValueMessage = TraceValue("message") // The spec clearly says "message", but some implementations use "messages" instead
 	TraceValueVerbose = TraceValue("verbose")
 )
+
+// https://microsoft.github.io/language-server-protocol/specifications/specification-3-16#textDocumentPositionParams
+
+type TextDocumentPositionParams struct {
+	/**
+	 * The text document.
+	 */
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+
+	/**
+	 * The position inside the text document.
+	 */
+	Position Position `json:"position"`
+}
+type PartialResultParams struct {
+	/**
+	 * An optional token that a server can use to report partial results (e.g.
+	 * streaming) to the client.
+	 */
+	PartialResultToken *ProgressToken `json:"partialResultToken,omitempty"`
+}
