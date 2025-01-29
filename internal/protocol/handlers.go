@@ -11,4 +11,5 @@ var Handlers = map[string]RequestHandler{
 	"shutdown":                HandleShutdown,
 	"textDocument/definition": HandleGotoDefinition,
 	"workspace/symbol":        HandleWorkspaceSymbol,
+	"$/cancelRequest":         HandleCancelRequest,
 }

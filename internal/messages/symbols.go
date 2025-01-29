@@ -34,6 +34,40 @@ const (
 	SymbolKindTypeParameter = SymbolKind(26)
 )
 
+var SymbolKindMap = map[string]SymbolKind{
+	"file":          SymbolKindFile,
+	"module":        SymbolKindModule,
+	"namespace":     SymbolKindNamespace,
+	"package":       SymbolKindPackage,
+	"class":         SymbolKindClass,
+	"method":        SymbolKindMethod,
+	"property":      SymbolKindProperty,
+	"field":         SymbolKindField,
+	"constructor":   SymbolKindConstructor,
+	"enum":          SymbolKindEnum,
+	"interface":     SymbolKindInterface,
+	"function":      SymbolKindFunction,
+	"variable":      SymbolKindVariable,
+	"constant":      SymbolKindConstant,
+	"string":        SymbolKindString,
+	"number":        SymbolKindNumber,
+	"boolean":       SymbolKindBoolean,
+	"array":         SymbolKindArray,
+	"object":        SymbolKindObject,
+	"key":           SymbolKindKey,
+	"null":          SymbolKindNull,
+	"enumMember":    SymbolKindEnumMember,
+	"struct":        SymbolKindStruct,
+	"event":         SymbolKindEvent,
+	"operator":      SymbolKindOperator,
+	"typeParameter": SymbolKindTypeParameter,
+}
+
+func GetSymbolKind(name string) (SymbolKind, bool) {
+	kind, exists := SymbolKindMap[name]
+	return kind, exists
+}
+
 /**
  * Symbol tags are extra annotations that tweak the rendering of a symbol.
  *

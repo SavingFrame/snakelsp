@@ -19,7 +19,10 @@ func HandleInitialize(c *Context) (interface{}, error) {
 	}
 	workspace.ClientSettings = *userSettings
 
-	workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath)
+	go func() {
+		workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath)
+		workspace.BulkParseSymbols()
+	}()
 	initializeResult := messages.NewInitializeResult()
 	return initializeResult, nil
 }
