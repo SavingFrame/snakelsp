@@ -39,6 +39,7 @@ type serverCapabilities struct {
 	TextDocumentSync        *textDocumentSyncOptions `json:"textDocumentSync"`
 	DefinitionProvider      bool                     `json:"definitionProvider"`
 	WorkspaceSymbolProvider bool                     `json:"workspaceSymbolProvider"`
+	DocumentSymbolProvider  bool                     `json:"documentSymbolProvider"`
 }
 
 type InitializeResult struct {
@@ -55,6 +56,7 @@ func NewInitializeResult() *InitializeResult {
 			},
 			DefinitionProvider:      true,
 			WorkspaceSymbolProvider: true,
+			DocumentSymbolProvider:  true,
 		},
 		ServerInfo: &serverInfo{
 			Name:    "SnakeLSP",

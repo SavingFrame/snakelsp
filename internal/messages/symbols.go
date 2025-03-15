@@ -83,6 +83,13 @@ type WorkspaceSymbolParams struct {
 	Query string `json:"query"`
 }
 
+type DocumentSymbolParams struct {
+	/**
+	 * The text document.
+	 */
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
 /**
  * A special workspace symbol that supports locations without a range
  *
@@ -126,4 +133,52 @@ type WorkspaceSymbol struct {
 	 * workspace symbol request and a workspace symbol resolve request.
 	 */
 	data any `json:"data,omitempty"`
+}
+
+type DocumentSymbol struct {
+	/**
+	 * The name of this symbol.
+	 */
+	Name string `json:"name"`
+
+	/**
+	 * More detail for this symbol, e.g the signature of a function.
+	 */
+	Detail string `json:"detail,omitempty"`
+
+	/**
+	 * The kind of this symbol.
+	 */
+	Kind SymbolKind `json:"kind"`
+
+	/**
+	 * Tags for this completion item.
+	 */
+	Tags []SymbolTag `json:"tags,omitempty"`
+
+	/**
+	 * Indicates if this symbol is deprecated.
+	 *
+	 * @deprecated Use tags instead
+	 */
+	Deprecated bool `json:"deprecated,omitempty"`
+
+	/**
+	 * The range enclosing this symbol not including leading/trailing whitespace
+	 * but everything else like comments. This information is typically used to
+	 * determine if the clients cursor is inside the symbol to reveal in the
+	 * symbol in the UI.
+	 */
+	Range Range `json:"range"`
+
+	/**
+	 * The range that should be selected and revealed when this symbol is being
+	 * picked, e.g. the name of a function. Must be contained by the `range`.
+	 */
+	SelectionRange Range `json:"selectionRange"`
+
+	/**
+	 * Children of this symbol, e.g. properties of a class.
+	 */
+	Children []DocumentSymbol `json:"children,omitempty"`
 }
