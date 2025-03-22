@@ -74,6 +74,11 @@ end
 
 ## 📅 Roadmap
 
+- [ ] **Implement LSP Notifications**
+  - [ ] `window/showMessage` → Show messages (errors, warnings, info) to the user
+  - [ ] `window/logMessage` → Log messages for debugging inside the editor
+  - [ ] `$/progress` → Support reporting progress (useful for indexing phase)
+  - [ ] `workspace/didChangeWatchedFiles` → Handle file changes from outside the editor (e.g., Git updates)
 - [ ] Implement **Go-to Definition** (`textDocument/definition`)
 - [ ] Add **Hover support** (`textDocument/hover`)
 - [ ] **Class Hierarchy Navigation** (like PyCharm)
