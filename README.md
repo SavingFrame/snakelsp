@@ -1,11 +1,9 @@
-Sure! Here's a properly structured `README.md` file for your `SnakeLSP` project:  
-
-```md
 # 🐍 SnakeLSP
 
 **SnakeLSP** is a Language Server (LSP) for Python written in Go. It is designed to provide fast and efficient language features by pre-parsing the entire project at startup, improving performance for large-scale Python codebases.
 
 ## 🚀 Features
+
 - **Performance-oriented**: Parses the full project once at startup, avoiding redundant re-parsing on requests.
 - **Basic LSP support**:
   - **(Planned) Go-to Definition, Auto-completion, Diagnostics**
@@ -14,6 +12,7 @@ Sure! Here's a properly structured `README.md` file for your `SnakeLSP` project:
 - **Written in Go**: Designed for speed and efficiency compared to Python-based LSP implementations.
 
 ## 📜 Supported LSP Handlers
+
 | Method                          | Handler                  | Description |
 |---------------------------------|--------------------------|-------------|
 | `initialize`                    | `HandleInitialize`       | Initializes the LSP server |
@@ -30,10 +29,12 @@ Sure! Here's a properly structured `README.md` file for your `SnakeLSP` project:
 ## 🏗️ Installation
 
 ### Prerequisites
+
 - **Go 1.18+** installed
 - **A Language Server Protocol (LSP) client** (VS Code, Neovim, etc.)
 
 ### Build & Install
+
 ```sh
 git clone https://github.com/your_username/snakelsp.git
 cd snakelsp
