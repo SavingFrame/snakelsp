@@ -86,6 +86,9 @@ end
   - [ ] **Find parent classes** (`textDocument/typeHierarchy/supertypes`)
 - [ ] Optimize performance for large projects
 - [ ] Multi-threaded parsing
+- [ ] **Add Testing**
+  - [ ] **Unit tests** for core LSP handlers (`initialize`, `didOpen`, `didChange`, etc.)  
+  - [ ] **Integration tests** for testing full LSP interactions with editors  
 
 ## 🤝 Contributing
 
