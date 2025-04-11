@@ -1,5 +1,7 @@
 package protocol
 
-func HandleCancelRequest(context *Context) (interface{}, error) {
+import "snakelsp/internal/request"
+
+func HandleCancelRequest(r *request.Request) (interface{}, error) {
 	return nil, nil
 }

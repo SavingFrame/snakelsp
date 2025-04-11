@@ -1,6 +1,8 @@
 package protocol
 
-type RequestHandler func(context *Context) (interface{}, error)
+import "snakelsp/internal/request"
+
+type RequestHandler func(r *request.Request) (interface{}, error)
 
 var Handlers = map[string]RequestHandler{
 	"initialize":                  HandleInitialize,

@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"log/slog"
 	"snakelsp/internal/messages"
+	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"
 	"strings"
 )
 
-func HandleDidOpen(c *Context) (interface{}, error) {
+func HandleDidOpen(r *request.Request) (interface{}, error) {
 	var data messages.DidOpenTextDocumentParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	if data.TextDocument.LanguageID != "python" {
@@ -20,8 +21,8 @@ func HandleDidOpen(c *Context) (interface{}, error) {
 	}
 	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text)
 
-	c.Logger.Debug("Content after get")
-	c.Logger.Debug(data.TextDocument.Text)
+	r.Logger.Debug("Content after get")
+	r.Logger.Debug(data.TextDocument.Text)
 	return interface{}(nil), nil
 }
 
@@ -68,11 +69,11 @@ func applyChange(content string, startLine, startCharacter, endLine, endCharacte
 	return strings.Join(lines, "\n")
 }
 
-func HandleDidChange(c *Context) (interface{}, error) {
+func HandleDidChange(r *request.Request) (interface{}, error) {
 	var data messages.DidChangeTextDocumentParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	pythonFile, err := workspace.GetPythonFile(data.TextDocument.URI)
@@ -88,22 +89,22 @@ func HandleDidChange(c *Context) (interface{}, error) {
 			change.Range.End.Line,
 			change.Range.End.Character,
 			change.Text,
-			c.Logger,
+			r.Logger,
 		)
 	}
 	pythonFile.Text = content
 	workspace.OpenFiles.Store(data.TextDocument.URI, pythonFile)
-	c.Logger.Debug("Content after change")
-	c.Logger.Debug(pythonFile.Text)
+	r.Logger.Debug("Content after change")
+	r.Logger.Debug(pythonFile.Text)
 
 	return nil, nil
 }
 
-func HandleDidClose(c *Context) (interface{}, error) {
+func HandleDidClose(r *request.Request) (interface{}, error) {
 	var data messages.DidCloseTextDocumentParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	file, err := workspace.GetPythonFile(data.TextDocument.URI)

@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"log/slog"
 	"snakelsp/internal/messages"
+	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"
 )
 
-func HandleInitialize(c *Context) (interface{}, error) {
+func HandleInitialize(r *request.Request) (interface{}, error) {
 	var data messages.InitializeParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	userSettings := &workspace.ClientSettingsType{
@@ -20,13 +21,13 @@ func HandleInitialize(c *Context) (interface{}, error) {
 	workspace.ClientSettings = *userSettings
 
 	go func() {
-		workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath)
+		workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath, r.Client)
 		workspace.BulkParseSymbols()
 	}()
 	initializeResult := messages.NewInitializeResult()
 	return initializeResult, nil
 }
 
-func HandleInitialized(context *Context) (interface{}, error) {
+func HandleInitialized(r *request.Request) (interface{}, error) {
 	return interface{}(nil), nil
 }

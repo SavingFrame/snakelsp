@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"snakelsp/internal/messages"
+	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"
 
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
@@ -86,11 +87,11 @@ func findDefinition(astRoot *tree_sitter.Node, symbol string, cursorNode *tree_s
 	return nil
 }
 
-func HandleGotoDefinition(c *Context) (interface{}, error) {
+func HandleGotoDefinition(r *request.Request) (interface{}, error) {
 	var data messages.DefinitionParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	pythonFile, err := workspace.GetPythonFile(data.TextDocument.URI)
@@ -103,11 +104,11 @@ func HandleGotoDefinition(c *Context) (interface{}, error) {
 		tree_sitter.Point{Row: uint(data.Position.Line), Column: uint(data.Position.Character)},
 	)
 	nodeText := pythonFile.ExtractTextFromNode(foundedNode)
-	definitionNode := findDefinition(astRoot, nodeText, foundedNode, []byte(pythonFile.Text), c.Logger)
+	definitionNode := findDefinition(astRoot, nodeText, foundedNode, []byte(pythonFile.Text), r.Logger)
 	if definitionNode == nil {
 		return nil, nil
 	}
-	c.Logger.Debug("Definition found", slog.String("name", definitionNode.ToSexp()))
+	r.Logger.Debug("Definition found", slog.String("name", definitionNode.ToSexp()))
 	definitionRange := &messages.Range{
 		Start: messages.Position{
 			Line:      uint32(definitionNode.StartPosition().Row),

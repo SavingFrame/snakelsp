@@ -1,5 +1,7 @@
 package protocol
 
-func HandleShutdown(context *Context) (interface{}, error) {
+import "snakelsp/internal/request"
+
+func HandleShutdown(r *request.Request) (interface{}, error) {
 	return interface{}(nil), nil
 }

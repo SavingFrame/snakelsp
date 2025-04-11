@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"snakelsp/internal/messages"
+	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"
 
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
@@ -15,12 +16,12 @@ type caputredSymbol struct {
 	Capture    tree_sitter.QueryCapture
 }
 
-func HandleWorkspaceSymbol(c *Context) (interface{}, error) {
+func HandleWorkspaceSymbol(r *request.Request) (interface{}, error) {
 	response := []messages.WorkspaceSymbol{}
 	var data messages.WorkspaceSymbolParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	symbols, err := workspace.GetWorkspaceSymbols(data.Query)
@@ -46,12 +47,12 @@ func HandleWorkspaceSymbol(c *Context) (interface{}, error) {
 	return response, nil
 }
 
-func HandleDocumentSybmol(c *Context) (interface{}, error) {
+func HandleDocumentSybmol(r *request.Request) (interface{}, error) {
 	response := []messages.DocumentSymbol{}
 	var data messages.DocumentSymbolParams
-	err := json.Unmarshal(c.Params, &data)
+	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
-		c.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
+		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
 	pythonFile, err := workspace.GetPythonFile(data.TextDocument.URI)

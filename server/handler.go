@@ -4,17 +4,20 @@ import (
 	"context"
 	"log"
 	"snakelsp/internal/protocol"
+	"snakelsp/internal/request"
 
 	"github.com/sourcegraph/jsonrpc2"
 )
 
 func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Request) (any, error) {
-	context := protocol.Context{
-		Method:     r.Method,
-		Context:    ctx,
-		Connection: c,
-		Request:    r,
-		Logger:     s.logger,
+	context := request.Request{
+		Method:  r.Method,
+		Context: ctx,
+		Client: &request.Client{
+			Conn:    c,
+			Request: r,
+		},
+		Logger: s.logger,
 	}
 	if r.Params != nil {
 		context.Params = *r.Params
