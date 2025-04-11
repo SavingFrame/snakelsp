@@ -16,7 +16,7 @@ type (
 type Client struct {
 	Conn    *jsonrpc2.Conn
 	Request *jsonrpc2.Request
-	Context *context.Context
+	Context context.Context
 }
 
 type Request struct {
@@ -28,14 +28,14 @@ type Request struct {
 }
 
 func (c *Client) Notify(method string, params any) {
-	if err := c.Conn.Notify(*c.Context, method, params); err != nil {
+	if err := c.Conn.Notify(c.Context, method, params); err != nil {
 		slog.Error(err.Error())
 	}
 }
 
 func (c *Client) Call(method string, params any) (any, error) {
 	result := interface{}(nil)
-	if err := c.Conn.Call(*c.Context, method, params, &result); err != nil {
+	if err := c.Conn.Call(c.Context, method, params, &result); err != nil {
 		slog.Error(err.Error())
 		return result, err
 	}

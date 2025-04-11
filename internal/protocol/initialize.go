@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"snakelsp/internal/messages"
+	"snakelsp/internal/progress"
 	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"
 )
@@ -21,8 +22,10 @@ func HandleInitialize(r *request.Request) (interface{}, error) {
 	workspace.ClientSettings = *userSettings
 
 	go func() {
-		workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath, r.Client)
-		workspace.BulkParseSymbols()
+		filesProgress := progress.NewWorkDone(r.Client)
+		workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
+		symbolsProgress := progress.NewWorkDone(r.Client)
+		workspace.BulkParseSymbols(symbolsProgress)
 	}()
 	initializeResult := messages.NewInitializeResult()
 	return initializeResult, nil

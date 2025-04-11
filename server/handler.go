@@ -16,6 +16,7 @@ func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Reque
 		Client: &request.Client{
 			Conn:    c,
 			Request: r,
+			Context: ctx,
 		},
 		Logger: s.logger,
 	}

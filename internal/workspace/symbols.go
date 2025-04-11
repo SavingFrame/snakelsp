@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"snakelsp/internal/messages"
+	"snakelsp/internal/progress"
 	"sync"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -77,8 +78,9 @@ func getTreeSitterQuery() string {
     `
 }
 
-func BulkParseSymbols() error {
+func BulkParseSymbols(pr *progress.WorkDone) error {
 	slog.Debug("Bulk parse symbols")
+	pr.Start("Parsing symbols")
 	qc := tree_sitter.NewQueryCursor()
 	defer qc.Close()
 	language := tree_sitter.NewLanguage(tree_sitter_python.Language())
@@ -102,6 +104,7 @@ func BulkParseSymbols() error {
 		return true
 	})
 	slog.Debug("Bulk parse symbols done")
+	pr.End("Symbols parsed")
 	return nil
 }
 

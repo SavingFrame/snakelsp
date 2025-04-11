@@ -25,6 +25,8 @@
 | `workspace/symbol`              | `HandleWorkspaceSymbol`  | Retrieves all symbols in the workspace |
 | `textDocument/documentSymbol`   | `HandleDocumentSymbol`   | Retrieves document-level symbols |
 | `$/cancelRequest`               | _Dummy_ `HandleCancelRequest`    | Handles request cancellations (Placeholder, does nothing currently)|
+| `window/workDoneProgress/create`               | `progress/progress.go`    | Generate notifications for ongoing progress|
+| `$/progress`               | `progress/progress.go`    | Update notifications for ongoing progress|
 
 ## 🏗️ Installation
 
@@ -77,7 +79,7 @@ end
 - [ ] **Implement LSP Notifications**
   - [ ] `window/showMessage` → Show messages (errors, warnings, info) to the user
   - [ ] `window/logMessage` → Log messages for debugging inside the editor
-  - [ ] `$/progress` → Support reporting progress (useful for indexing phase)
+  - [x] `$/progress` → Support reporting progress (useful for indexing phase)
   - [ ] `workspace/didChangeWatchedFiles` → Handle file changes from outside the editor (e.g., Git updates)
 - [ ] Implement **Go-to Definition** (`textDocument/definition`)
 - [ ] Add **Hover support** (`textDocument/hover`)

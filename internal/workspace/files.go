@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"snakelsp/internal/progress"
 	"sync"
 
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
@@ -22,7 +23,8 @@ type PythonFile struct {
 	astRoot *tree_sitter.Node
 }
 
-func ParseProject(projectPath string, envPath string) error {
+func ParseProject(projectPath string, envPath string, progress *progress.WorkDone) error {
+	progress.Start("Parsing project files")
 	excludedFolders := []string{".git", ".venv", ".mypy_cache"}
 	pythonFiles := []*PythonFile{}
 	filepath.Walk(projectPath, func(path string, info os.FileInfo, err error) error {
@@ -42,7 +44,7 @@ func ParseProject(projectPath string, envPath string) error {
 		ProjectFiles.Store(url, pythonFile)
 		return nil
 	})
-	bulkParseAst(pythonFiles)
+	bulkParseAst(pythonFiles, progress)
 	return nil
 }
 
@@ -70,19 +72,21 @@ func (p *PythonFile) parseAst() *tree_sitter.Node {
 	tree := parser.Parse([]byte(p.Text), nil)
 	root := tree.RootNode()
 	p.astRoot = root
-	// slog.Debug(root.ToSexp())
 	return p.astRoot
 }
 
-func bulkParseAst(files []*PythonFile) {
+func bulkParseAst(files []*PythonFile, pr *progress.WorkDone) {
 	parser := tree_sitter.NewParser()
 	defer parser.Close()
 	parser.SetLanguage(tree_sitter.NewLanguage(tree_sitter_python.Language()))
-	for _, file := range files {
+	totalFiles := len(files)
+	for i, file := range files {
+		pr.Report(fmt.Sprintf("Processing file %d of %d", i+1, totalFiles), uint16(float64(i+1)/float64(totalFiles)*100))
 		tree := parser.Parse([]byte(file.Text), nil)
 		root := tree.RootNode()
 		file.astRoot = root
 	}
+	pr.End("Finished parsing project files")
 }
 
 func (p *PythonFile) GetOrCreateAst() *tree_sitter.Node {
