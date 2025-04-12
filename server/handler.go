@@ -36,6 +36,7 @@ func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Reque
 				log.Println(err)
 				return nil, err
 			}
+			return nil, err
 		}
 		result, err := handler(&context)
 		if err != nil {
