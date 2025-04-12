@@ -27,6 +27,8 @@ type Symbol struct {
 	Children   []*Symbol
 
 	// Base classes for class
+	// TODO: 1. Parse superclasses with attributes
+	// 2. Parse imports and superclasses from related files
 	SuperClasses []*Symbol
 }
 
