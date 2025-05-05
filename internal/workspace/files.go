@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"snakelsp/internal/progress"
 	"sync"
+
+	"snakelsp/internal/progress"
 
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
 	tree_sitter_python "github.com/tree-sitter/tree-sitter-python/bindings/go"
@@ -21,9 +22,11 @@ type PythonFile struct {
 	Text    string
 	astTree *tree_sitter.Tree
 	astRoot *tree_sitter.Node
+
+	Imports []Import
 }
 
-func ParseProject(projectPath string, envPath string, progress *progress.WorkDone) error {
+func ParseProjectFiles(projectPath string, envPath string, progress *progress.WorkDone) error {
 	progress.Start("Parsing project files")
 	excludedFolders := []string{".git", ".venv", ".mypy_cache"}
 	pythonFiles := []*PythonFile{}

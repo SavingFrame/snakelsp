@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"log/slog"
+
 	"snakelsp/internal/messages"
 	"snakelsp/internal/progress"
 	"snakelsp/internal/request"
@@ -23,7 +24,9 @@ func HandleInitialize(r *request.Request) (interface{}, error) {
 
 	go func() {
 		filesProgress := progress.NewWorkDone(r.Client)
-		workspace.ParseProject(*data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
+		workspace.ParseProjectFiles(*data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
+		importsProgress := progress.NewWorkDone(r.Client)
+		workspace.BulkParseImports(importsProgress)
 		symbolsProgress := progress.NewWorkDone(r.Client)
 		workspace.BulkParseSymbols(symbolsProgress)
 	}()

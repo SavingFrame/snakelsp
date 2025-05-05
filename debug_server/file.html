@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File: {{.File.Url}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        h1, h2 { color: #333; }
+        a { text-decoration: none; color: #0066cc; }
+        a:hover { text-decoration: underline; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📄 File: {{.File.Url}}</h1>
+
+    <div class="section">
+        <h2>🔗 Imports</h2>
+        {{if .Imports}}
+        <table>
+            <thead>
+                <tr>
+                    <th>Source Module</th>
+                    <th>Imported Name</th>
+                    <th>Alias</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Imports}}
+                <tr>
+                    <td>{{.SourceModule}}</td>
+                    <td>{{.ImportedName}}</td>
+                    <td>{{.Alias}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <p>No imports found.</p>
+        {{end}}
+    </div>
+
+    <div class="section">
+        <h2>🏛️ Symbols</h2>
+        {{if .Symbols}}
+        <table>
+            <thead>
+                <tr>
+                    <th>Kind</th>
+                    <th>Name</th>
+                    <th>Full Signature</th>
+                    <th>Start (Line:Char)</th>
+                    <th>End (Line:Char)</th>
+                    <th>Superclass UUIDs</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Symbols}}
+                <tr>
+                    <td>{{.Kind}}</td>
+                    <td>{{.Name}}</td>
+                    <td>{{.FullName}}</td>
+                    <td>{{.Range.Start.Line}}:{{.Range.Start.Character}}</td>
+                    <td>{{.Range.End.Line}}:{{.Range.End.Character}}</td>
+                    <td>
+                        {{range .SuperClasses}}
+                            {{.UUID}}<br/>
+                        {{else}}
+                            None
+                        {{end}}
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <p>No symbols found.</p>
+        {{end}}
+    </div>
+
+    <a class="back-link" href="/">⬅️ Back to File List</a>
+
+</body>
+</html>

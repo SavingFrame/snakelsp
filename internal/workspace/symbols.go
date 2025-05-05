@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
+
 	"snakelsp/internal/messages"
 	"snakelsp/internal/progress"
-	"sync"
 
 	"github.com/google/uuid"
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -55,8 +56,6 @@ func (f *PythonFile) ParseSymbols() ([]*Symbol, error) {
 		return nil, err
 	}
 	symbols := processSymbols(f, qc, query)
-	// WARNING: I dont think that we need it, cuz we will duplicate symbols with bulkParseSymbol
-	// WorkspaceSymbols.Store(f, symbols)
 	return symbols, nil
 }
 
@@ -80,7 +79,6 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 		symbols := processSymbols(pythonFile, qc, query)
 		WorkspaceSymbols.Store(pythonFile, symbols)
 		for _, symbol := range symbols {
-			slog.Debug("Test exists symbol uuid", "uuid", symbol.UUID)
 			flatSymbols[symbol.UUID] = symbol
 			for _, children := range symbol.Children {
 				flatSymbols[children.UUID] = children
@@ -233,7 +231,6 @@ func createSymbol(
 }
 
 func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *tree_sitter.Query) []*Symbol {
-	// classSymbols := []*Symbol{}    // Store classes
 	classSymbols := map[string]*Symbol{} // Store classes by name and name range
 	moduleSymbols := []*Symbol{}         // Store standalone functions
 	matches := qc.Matches(query, pythonFile.GetOrCreateAst(), []byte(pythonFile.Text))
