@@ -178,7 +178,7 @@ func getTreeSitterQuery() string {
 		(identifier) @class.superclass)? @class.superclasses
 		body: (block) @class.body)
 
-    ;; Capture methods inside a class (ensuring no duplication with functions)
+    ;; Capture methods definitions inside a class (ensuring no duplication with functions) without decorators
     (class_definition
         body: (block
             (function_definition
@@ -187,12 +187,35 @@ func getTreeSitterQuery() string {
                 return_type: (type)? @method.return_type
                 body:(_) @method.body))) ; Capture full method range
 
+
+	;; Method definitions (decorated)
+	(class_definition
+	  body: (block
+		(decorated_definition
+		  (decorator)* ; optionally capture individual decorators if needed
+		  definition: (function_definition
+			name: (identifier) @method.name
+			parameters: (parameters) @method.params
+			return_type: (type)? @method.return_type
+			body: (_) @method.body))))
+
     ;; Capture standalone module functions (without duplication)
+
+	;; Without decorators
     (module (function_definition
         name: (identifier) @function.name
         parameters: (parameters) @function.params
         return_type: (type)? @function.return_type
         body:(_) @function.body)) ; Capture function body for range
+	;; With decorators
+	(module
+	  (decorated_definition
+		(decorator)* ; optional, you can also write [(decorator)] as a short form
+		definition: (function_definition
+		  name: (identifier) @function.name
+		  parameters: (parameters) @function.params
+		  return_type: (type)? @function.return_type
+		  body: (_) @function.body)))
     `
 }
 
