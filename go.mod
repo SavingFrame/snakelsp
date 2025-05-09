@@ -1,8 +1,8 @@
 module snakelsp
 
-go 1.23
+go 1.23.0
 
-toolchain go1.23.5
+toolchain go1.24.2
 
 require (
 	github.com/lithammer/fuzzysearch v1.1.8
@@ -13,6 +13,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/elliotchance/orderedmap/v3 v3.1.0
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gdamore/tcell/v2 v2.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect

@@ -50,7 +50,7 @@ type InitializeParams struct {
 	 *
 	 * @deprecated in favour of `rootUri`.
 	 */
-	RootPath *string `json:"rootPath,omitempty"`
+	RootPath string `json:"rootPath,omitempty"`
 
 	/**
 	 * The rootUri of the workspace. Is null if no

@@ -3,6 +3,7 @@ package debug_server
 import (
 	"embed"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"sync"
 
@@ -23,14 +24,17 @@ func loadTemplates() {
 	})
 }
 
-func StartHTTPServer(addr string) error {
+func StartHTTPServer(addr string) {
 	loadTemplates()
 
 	// Routes
 	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/file", handleFile)
 
-	return http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(addr, nil)
+	if err != nil {
+		slog.Warn("Debug server failed to start", "error", err)
+	}
 }
 
 func handleHome(w http.ResponseWriter, r *http.Request) {

@@ -35,7 +35,7 @@ func HandleWorkspaceSymbol(r *request.Request) (interface{}, error) {
 
 	for _, symbol := range symbols {
 		response = append(response, messages.WorkspaceSymbol{
-			Name: symbol.FullName,
+			Name: symbol.SymbolNameWithParent(),
 			Kind: symbol.Kind,
 			Location: messages.Location{
 				URI:   symbol.File.Url,

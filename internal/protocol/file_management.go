@@ -21,8 +21,6 @@ func HandleDidOpen(r *request.Request) (interface{}, error) {
 	}
 	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text)
 
-	r.Logger.Debug("Content after get")
-	r.Logger.Debug(data.TextDocument.Text)
 	return interface{}(nil), nil
 }
 

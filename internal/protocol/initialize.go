@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	"snakelsp/internal/messages"
@@ -10,7 +11,7 @@ import (
 	"snakelsp/internal/workspace"
 )
 
-func HandleInitialize(r *request.Request) (interface{}, error) {
+func HandleInitialize(r *request.Request) (any, error) {
 	var data messages.InitializeParams
 	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
@@ -21,10 +22,13 @@ func HandleInitialize(r *request.Request) (interface{}, error) {
 		VirtualEnvPath: data.InitializationOptions.VirtualEnvPath,
 	}
 	workspace.ClientSettings = *userSettings
+	if data.RootPath == "" {
+		return nil, fmt.Errorf("rootPath is required")
+	}
 
 	go func() {
 		filesProgress := progress.NewWorkDone(r.Client)
-		workspace.ParseProjectFiles(*data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
+		workspace.ParseProjectFiles(data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
 		importsProgress := progress.NewWorkDone(r.Client)
 		workspace.BulkParseImports(importsProgress)
 		symbolsProgress := progress.NewWorkDone(r.Client)
@@ -34,6 +38,6 @@ func HandleInitialize(r *request.Request) (interface{}, error) {
 	return initializeResult, nil
 }
 
-func HandleInitialized(r *request.Request) (interface{}, error) {
-	return interface{}(nil), nil
+func HandleInitialized(r *request.Request) (any, error) {
+	return any(nil), nil
 }

@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 
 	"snakelsp/internal/messages"
 	"snakelsp/internal/progress"
 
+	"github.com/elliotchance/orderedmap/v3"
 	"github.com/google/uuid"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
@@ -26,6 +28,7 @@ type Symbol struct {
 	Range      messages.Range
 	NameRange  messages.Range
 	Children   []*Symbol
+	Parent     *Symbol
 
 	// Base classes for class
 	// TODO: 1. Parse superclasses with attributes
@@ -35,11 +38,11 @@ type Symbol struct {
 
 var (
 	WorkspaceSymbols sync.Map
-	flatSymbols      map[uuid.UUID]*Symbol = make(map[uuid.UUID]*Symbol)
+	flatSymbols      *orderedmap.OrderedMap[uuid.UUID, *Symbol] = orderedmap.NewOrderedMap[uuid.UUID, *Symbol]()
 )
 
 func SearchSymbolByUUID(uuid uuid.UUID) (*Symbol, error) {
-	symbol, exists := flatSymbols[uuid]
+	symbol, exists := flatSymbols.Get(uuid)
 	if !exists {
 		return nil, fmt.Errorf("symbol not found")
 	}
@@ -79,9 +82,9 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 		symbols := processSymbols(pythonFile, qc, query)
 		WorkspaceSymbols.Store(pythonFile, symbols)
 		for _, symbol := range symbols {
-			flatSymbols[symbol.UUID] = symbol
+			flatSymbols.Set(symbol.UUID, symbol)
 			for _, children := range symbol.Children {
-				flatSymbols[children.UUID] = children
+				flatSymbols.Set(children.UUID, children)
 			}
 		}
 		return true
@@ -119,10 +122,7 @@ func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 }
 
 func GetWorkspaceSymbols(query string) ([]*Symbol, error) {
-	symbols := make([]*Symbol, 0, len(flatSymbols))
-	for _, value := range flatSymbols {
-		symbols = append(symbols, value)
-	}
+	symbols := slices.Collect(flatSymbols.Values())
 	if query == "" {
 		return symbols, nil
 	}
@@ -134,7 +134,7 @@ func GetWorkspaceSymbols(query string) ([]*Symbol, error) {
 }
 
 func FindSymbolByPosition(file *PythonFile, line, character uint32) (*Symbol, error) {
-	for _, symbol := range flatSymbols {
+	for symbol := range flatSymbols.Values() {
 		if symbol.File.Url == file.Url &&
 			(symbol.NameRange.Start.Line <= line && symbol.NameRange.End.Line >= line) &&
 			(symbol.NameRange.Start.Character <= character && symbol.NameRange.End.Character >= character) {
@@ -144,22 +144,29 @@ func FindSymbolByPosition(file *PythonFile, line, character uint32) (*Symbol, er
 	return nil, fmt.Errorf("symbol not found")
 }
 
+func (s *Symbol) SymbolNameWithParent() string {
+	if s.Parent == nil {
+		return s.Name
+	}
+	return fmt.Sprintf("%s.%s", s.Parent.Name, s.Name)
+}
+
 func filterSymbols(symbols []*Symbol, query string) ([]*Symbol, error) {
 	var filteredSymbols []*Symbol
 
 	// Collect all symbol names into a slice
 	var names []string
 	for _, symbol := range symbols {
-		names = append(names, symbol.Name)
+		names = append(names, symbol.SymbolNameWithParent())
 	}
-
+	slog.Debug("Names", "names", names)
 	// Perform fuzzy matching on names
 	matchedNames := fuzzy.FindFold(query, names)
 
 	// Collect the symbols that match the names
 	for _, matchedName := range matchedNames {
 		for _, symbol := range symbols {
-			if symbol.Name == matchedName {
+			if symbol.SymbolNameWithParent() == matchedName {
 				filteredSymbols = append(filteredSymbols, symbol)
 				break
 			}
@@ -317,6 +324,7 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 			newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, nil)
 			for _, classSymbol := range classSymbols {
 				if isChildOf(newSymbol, classSymbol) {
+					newSymbol.Parent = classSymbol
 					classSymbol.Children = append(classSymbol.Children, newSymbol)
 					break
 				}
