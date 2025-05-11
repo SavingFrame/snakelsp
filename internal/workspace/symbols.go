@@ -49,7 +49,7 @@ func SearchSymbolByUUID(uuid uuid.UUID) (*Symbol, error) {
 	return symbol, nil
 }
 
-func (f *PythonFile) ParseSymbols() ([]*Symbol, error) {
+func (f *PythonFile) parseSymbols() ([]*Symbol, error) {
 	qc := tree_sitter.NewQueryCursor()
 	defer qc.Close()
 	language := tree_sitter.NewLanguage(tree_sitter_python.Language())
@@ -100,7 +100,16 @@ func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 	value, exists := WorkspaceSymbols.Load(f)
 	if !exists {
 		var err error
-		symbols, err = f.ParseSymbols()
+		symbols, err = f.parseSymbols()
+		WorkspaceSymbols.Store(f, symbols)
+		if !f.External {
+			for _, symbol := range symbols {
+				flatSymbols.Set(symbol.UUID, symbol)
+				for _, children := range symbol.Children {
+					flatSymbols.Set(children.UUID, children)
+				}
+			}
+		}
 		if err != nil {
 			return nil, err
 		}

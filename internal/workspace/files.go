@@ -18,10 +18,11 @@ var OpenFiles sync.Map
 var ProjectFiles sync.Map
 
 type PythonFile struct {
-	Url     string
-	Text    string
-	astTree *tree_sitter.Tree
-	astRoot *tree_sitter.Node
+	Url      string
+	Text     string
+	astTree  *tree_sitter.Tree
+	astRoot  *tree_sitter.Node
+	External bool
 
 	Imports []Import
 }
@@ -42,7 +43,7 @@ func ParseProjectFiles(projectPath string, envPath string, progress *progress.Wo
 		if rfErr != nil {
 			return err
 		}
-		pythonFile := NewPythonFile(url, string(file))
+		pythonFile := NewPythonFile(url, string(file), false)
 		pythonFiles = append(pythonFiles, pythonFile)
 		ProjectFiles.Store(url, pythonFile)
 		return nil
@@ -54,18 +55,28 @@ func ParseProjectFiles(projectPath string, envPath string, progress *progress.Wo
 func GetPythonFile(url string) (*PythonFile, error) {
 	file, ok := OpenFiles.Load(url)
 	if !ok {
-		return nil, fmt.Errorf("file not found")
+		return nil, fmt.Errorf("File in the OpenFiles map not found")
 	}
 	return file.(*PythonFile), nil
 }
 
-func NewPythonFile(url string, text string) *PythonFile {
+func NewPythonFile(url string, text string, external bool) *PythonFile {
 	pythonFile := &PythonFile{
-		Url:  url,
-		Text: text,
+		Url:      url,
+		Text:     text,
+		External: external,
 	}
 	OpenFiles.Store(url, pythonFile)
 	return pythonFile
+}
+
+func ImportPythonFileFromFile(path string, external bool) (*PythonFile, error) {
+	url := "file://" + path
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return NewPythonFile(url, string(content), external), nil
 }
 
 func (p *PythonFile) parseAst() *tree_sitter.Node {

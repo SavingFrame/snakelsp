@@ -1,7 +1,7 @@
 package messages
 
 type InitializationOptionsParams struct {
-	VirtualEnvPath string `json:"settings.virtualenv_path"`
+	VirtualEnvPath string `json:"virtualenv_path"`
 }
 
 type InitializeParams struct {

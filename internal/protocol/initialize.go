@@ -20,6 +20,7 @@ func HandleInitialize(r *request.Request) (any, error) {
 	}
 	userSettings := &workspace.ClientSettingsType{
 		VirtualEnvPath: data.InitializationOptions.VirtualEnvPath,
+		WorkspaceRoot:  data.RootPath,
 	}
 	workspace.ClientSettings = *userSettings
 	if data.RootPath == "" {
@@ -30,7 +31,7 @@ func HandleInitialize(r *request.Request) (any, error) {
 		filesProgress := progress.NewWorkDone(r.Client)
 		workspace.ParseProjectFiles(data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
 		importsProgress := progress.NewWorkDone(r.Client)
-		workspace.BulkParseImports(importsProgress)
+		workspace.BulkParseImports(importsProgress, userSettings)
 		symbolsProgress := progress.NewWorkDone(r.Client)
 		workspace.BulkParseSymbols(symbolsProgress)
 	}()

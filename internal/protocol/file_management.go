@@ -11,6 +11,7 @@ import (
 
 func HandleDidOpen(r *request.Request) (interface{}, error) {
 	var data messages.DidOpenTextDocumentParams
+	var external bool
 	err := json.Unmarshal(r.Params, &data)
 	if err != nil {
 		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
@@ -19,7 +20,12 @@ func HandleDidOpen(r *request.Request) (interface{}, error) {
 	if data.TextDocument.LanguageID != "python" {
 		return nil, nil
 	}
-	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text)
+	if strings.Contains(data.TextDocument.URI, workspace.ClientSettings.WorkspaceRoot) {
+		external = false
+	} else {
+		external = true
+	}
+	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text, external)
 
 	return interface{}(nil), nil
 }
