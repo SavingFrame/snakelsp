@@ -13,9 +13,9 @@ import (
 	tree_sitter_python "github.com/tree-sitter/tree-sitter-python/bindings/go"
 )
 
-var OpenFiles sync.Map
+var OpenFiles sync.Map // Opened files in the editor
 
-var ProjectFiles sync.Map
+var ProjectFiles sync.Map // Projects files, also 3rd libraries files
 
 type PythonFile struct {
 	Url      string
@@ -43,9 +43,8 @@ func ParseProjectFiles(projectPath string, envPath string, progress *progress.Wo
 		if rfErr != nil {
 			return err
 		}
-		pythonFile := NewPythonFile(url, string(file), false)
+		pythonFile := NewPythonFile(url, string(file), false, false)
 		pythonFiles = append(pythonFiles, pythonFile)
-		ProjectFiles.Store(url, pythonFile)
 		return nil
 	})
 	bulkParseAst(pythonFiles, progress)
@@ -60,13 +59,16 @@ func GetPythonFile(url string) (*PythonFile, error) {
 	return file.(*PythonFile), nil
 }
 
-func NewPythonFile(url string, text string, external bool) *PythonFile {
+func NewPythonFile(url string, text string, external, isOpen bool) *PythonFile {
 	pythonFile := &PythonFile{
 		Url:      url,
 		Text:     text,
 		External: external,
 	}
-	OpenFiles.Store(url, pythonFile)
+	if isOpen {
+		OpenFiles.Store(url, pythonFile)
+	}
+	ProjectFiles.Store(url, pythonFile)
 	return pythonFile
 }
 
@@ -76,7 +78,7 @@ func ImportPythonFileFromFile(path string, external bool) (*PythonFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewPythonFile(url, string(content), external), nil
+	return NewPythonFile(url, string(content), external, false), nil
 }
 
 func (p *PythonFile) parseAst() *tree_sitter.Node {
@@ -111,6 +113,7 @@ func (p *PythonFile) GetOrCreateAst() *tree_sitter.Node {
 	}
 }
 
+// TODO: Delete this function
 func (p *PythonFile) ExtractTextFromNode(node *tree_sitter.Node) string {
 	startByte := node.StartByte()
 	endByte := node.EndByte()

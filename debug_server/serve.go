@@ -18,9 +18,26 @@ var (
 	once      sync.Once
 )
 
+type RenderSymbol struct {
+	Symbol *workspace.Symbol
+	Depth  int
+}
+
+func flattenSymbols(symbols []*workspace.Symbol, depth int) []RenderSymbol {
+	var result []RenderSymbol
+	for _, sym := range symbols {
+		result = append(result, RenderSymbol{Symbol: sym, Depth: depth})
+		result = append(result, flattenSymbols(sym.Children, depth+1)...) // recursion
+	}
+	return result
+}
 func loadTemplates() {
+
+	var templateFuncs = template.FuncMap{
+		"multiply": func(a, b int) int { return a * b },
+	}
 	once.Do(func() {
-		templates = template.Must(template.ParseFS(templateFiles, "*.html"))
+		templates = template.Must(template.New("").Funcs(templateFuncs).ParseFS(templateFiles, "*.html"))
 	})
 }
 
@@ -42,6 +59,9 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 
 	workspace.ProjectFiles.Range(func(_, value interface{}) bool {
 		if file, ok := value.(*workspace.PythonFile); ok {
+			// if !file.External {
+			// 	files = append(files, file)
+			// }
 			files = append(files, file)
 		}
 		return true
@@ -78,17 +98,21 @@ func handleFile(w http.ResponseWriter, r *http.Request) {
 
 	var symbols []*workspace.Symbol
 	wsSymbols, ok := workspace.WorkspaceSymbols.Load(pythonFile)
+	var flatSymbols []RenderSymbol
 	if ok {
 		symbols = wsSymbols.([]*workspace.Symbol)
+		flatSymbols = flattenSymbols(symbols, 0) // Create flattened recursive display list
 	}
+	slog.Debug("Amount of symbols", slog.Int("amount", len(symbols)))
 
+	slog.Debug("Amount of imports", slog.Int("amount", len(pythonFile.Imports)))
 	templates.ExecuteTemplate(w, "file.html", struct {
-		File    *workspace.PythonFile
-		Symbols []*workspace.Symbol
-		Imports []workspace.Import
+		File        *workspace.PythonFile
+		SymbolsFlat []RenderSymbol
+		Imports     []workspace.Import
 	}{
-		File:    pythonFile,
-		Symbols: symbols,
-		Imports: pythonFile.Imports,
+		File:        pythonFile,
+		SymbolsFlat: flatSymbols,
+		Imports:     pythonFile.Imports,
 	})
 }

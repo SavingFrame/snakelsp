@@ -25,7 +25,7 @@ func HandleDidOpen(r *request.Request) (interface{}, error) {
 	} else {
 		external = true
 	}
-	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text, external)
+	workspace.NewPythonFile(data.TextDocument.URI, data.TextDocument.Text, external, true)
 
 	return interface{}(nil), nil
 }

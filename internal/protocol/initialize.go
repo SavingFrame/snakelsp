@@ -31,7 +31,7 @@ func HandleInitialize(r *request.Request) (any, error) {
 		filesProgress := progress.NewWorkDone(r.Client)
 		workspace.ParseProjectFiles(data.RootPath, data.InitializationOptions.VirtualEnvPath, filesProgress)
 		importsProgress := progress.NewWorkDone(r.Client)
-		workspace.BulkParseImports(importsProgress, userSettings)
+		workspace.BulkParseImports(importsProgress)
 		symbolsProgress := progress.NewWorkDone(r.Client)
 		workspace.BulkParseSymbols(symbolsProgress)
 	}()

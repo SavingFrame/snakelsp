@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -20,7 +21,12 @@ type Import struct {
 	Symbol       *Symbol
 }
 
-func (f *PythonFile) ParseImports(cs *ClientSettingsType) ([]Import, error) {
+func (f *PythonFile) ParseImports() ([]Import, error) {
+	slog.Debug("Parse Imports")
+	return f.parseImports(true)
+}
+
+func (f *PythonFile) parseImports(withResolvedSymbols bool) ([]Import, error) {
 	qc := tree_sitter.NewQueryCursor()
 	defer qc.Close()
 	language := tree_sitter.NewLanguage(tree_sitter_python.Language())
@@ -28,11 +34,22 @@ func (f *PythonFile) ParseImports(cs *ClientSettingsType) ([]Import, error) {
 	if err != nil {
 		return nil, err
 	}
-	imports := processImports(f, qc, query, cs)
+	imports := processImports(f, qc, query, withResolvedSymbols)
 	return imports, nil
 }
 
-func BulkParseImports(pr *progress.WorkDone, cs *ClientSettingsType) error {
+func (f *PythonFile) GetImports() ([]Import, error) {
+	if f.Imports == nil {
+		imports, err := f.ParseImports()
+		if err != nil {
+			return nil, err
+		}
+		f.Imports = imports
+	}
+	return f.Imports, nil
+}
+
+func BulkParseImports(pr *progress.WorkDone) error {
 	slog.Debug("Parsing imports")
 	pr.Start("Parsing imports")
 	defer pr.End("Parsing import end")
@@ -46,7 +63,10 @@ func BulkParseImports(pr *progress.WorkDone, cs *ClientSettingsType) error {
 	}
 	ProjectFiles.Range(func(key, value any) bool {
 		file := value.(*PythonFile)
-		imports := processImports(file, qc, query, cs)
+		if file.External {
+			return true
+		}
+		imports := processImports(file, qc, query, true)
 		file.Imports = imports
 		return true
 	})
@@ -54,33 +74,33 @@ func BulkParseImports(pr *progress.WorkDone, cs *ClientSettingsType) error {
 	return nil
 }
 
-func findImportSymbol(cs *ClientSettingsType, i *Import) (*Symbol, error) {
-	module := strings.ReplaceAll(i.SourceModule, ".", string(filepath.Separator))
+func resolveImportSymbol(file *PythonFile, imp *Import) (*Symbol, error) {
+	// slog.Debug("Resolve import symbol for file", slog.String("fileUrl", file.Url), slog.String("importedName", imp.ImportedName), slog.String("sourceModule", imp.SourceModule))
+	module := strings.ReplaceAll(imp.SourceModule, ".", string(filepath.Separator))
 	var moduleFile string
-	for _, workspaceRoot := range cs.ModulesPath() {
+	for _, workspaceRoot := range ClientSettings.ModulesPath() {
 		path := filepath.Join(workspaceRoot, module)
 
 		// Try as a module: foo/bar.py
 		filePath := path + ".py"
-		slog.Debug("Checking for module", slog.String("filePath", filePath))
 		if _, err := os.Stat(filePath); err == nil {
-			slog.Debug("Module file found", slog.String("filePath", filePath))
 			moduleFile = filePath
 			break
 		}
 
 		// Try as a package: foo/bar/__init__.py
 		filePath = filepath.Join(path, "__init__.py")
-		slog.Debug("Checking for package", slog.String("filePath", filePath))
 		if _, err := os.Stat(filePath); err == nil {
 			moduleFile = filePath
 			break
 		}
 	}
 	if moduleFile == "" {
-		slog.Warn("File for module not found", slog.String("module", i.SourceModule))
-		return nil, nil
+		slog.Warn("File for module not found", slog.String("module", imp.SourceModule))
+		return nil, errors.New("module file not found")
 	}
+
+	// Get or create destination pythonFile
 	fileUrl := "file://" + moduleFile
 	dstFile, err := GetPythonFile(fileUrl)
 	if err != nil {
@@ -90,22 +110,41 @@ func findImportSymbol(cs *ClientSettingsType, i *Import) (*Symbol, error) {
 			return nil, err
 		}
 	}
-	i.PythonFile = dstFile
+
+	// Get symbols from the destination file
 	fileSymbols, err := dstFile.FileSymbols("")
 	if err != nil {
 		slog.Warn("Error getting file symbols", slog.String("fileUrl", fileUrl), slog.Any("error", err))
 		return nil, err
 	}
+
+	// Find the specific symbol
 	for _, symbol := range fileSymbols {
-		if symbol.Name == i.ImportedName {
+		if symbol.Name == imp.ImportedName {
 			return symbol, nil
 		}
 	}
-	slog.Debug("Symbol not found", slog.String("importedName", i.ImportedName), slog.String("sourceModule", i.SourceModule))
-	return nil, nil
+
+	var imports []Import
+	if dstFile.Imports == nil {
+		imports, err = dstFile.parseImports(false)
+		if err != nil {
+			slog.Warn("Error parsing nested imports", slog.String("fileUrl", fileUrl), slog.Any("error", err))
+		}
+	} else {
+		imports = dstFile.Imports
+	}
+	for _, nestedImport := range imports {
+		if nestedImport.ImportedName == imp.ImportedName {
+			slog.Debug("Found nested import", slog.String("importedName", nestedImport.ImportedName), slog.String("sourceModule", nestedImport.SourceModule))
+			return resolveImportSymbol(file, &nestedImport)
+		}
+	}
+
+	return nil, errors.New("symbol not found")
 }
 
-func processImports(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *tree_sitter.Query, cs *ClientSettingsType) []Import {
+func processImports(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *tree_sitter.Query, withResolvedSymbols bool) []Import {
 	imports := []Import{}
 	matches := qc.Matches(query, pythonFile.GetOrCreateAst(), []byte(pythonFile.Text))
 	for match := matches.Next(); match != nil; match = matches.Next() {
@@ -132,11 +171,14 @@ func processImports(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 				SourceModule: sourceModule,
 				ImportedName: importedName,
 			}
-			symbol, err := findImportSymbol(cs, &i)
-			if err != nil {
-				slog.Warn("Error finding import symbol", slog.String("sourceModule", sourceModule), slog.Any("error", err))
-			} else {
-				i.Symbol = symbol
+			if withResolvedSymbols {
+				symbol, err := resolveImportSymbol(pythonFile, &i)
+				if err != nil {
+					slog.Warn("Error finding import symbol", slog.String("sourceModule", sourceModule), slog.Any("error", err))
+				} else {
+					i.Symbol = symbol
+					i.PythonFile = symbol.File
+				}
 			}
 
 			imports = append(imports, i)

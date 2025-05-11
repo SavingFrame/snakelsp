@@ -33,7 +33,8 @@ type Symbol struct {
 	// Base classes for class
 	// TODO: 1. Parse superclasses with attributes
 	// 2. Parse imports and superclasses from related files
-	SuperClasses []*Symbol
+	SuperClasses      []*Symbol
+	superClassesNames []string
 }
 
 var (
@@ -79,7 +80,13 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 			slog.Error("Unexpected value type")
 			return true
 		}
+		if pythonFile.External {
+			return true
+		}
 		symbols := processSymbols(pythonFile, qc, query)
+		for _, symbol := range symbols {
+			resolveExternalSuperclassSymbol(pythonFile, symbol)
+		}
 		WorkspaceSymbols.Store(pythonFile, symbols)
 		for _, symbol := range symbols {
 			flatSymbols.Set(symbol.UUID, symbol)
@@ -246,9 +253,9 @@ func createSymbol(
 	endPos messages.Position,
 	nameStartPos messages.Position,
 	nameEndPos messages.Position,
-	superClass *Symbol,
+	superClassName string,
 ) *Symbol {
-	return &Symbol{
+	symbol := &Symbol{
 		UUID:       uuid.New(),
 		Name:       name,
 		Kind:       kind,
@@ -264,9 +271,38 @@ func createSymbol(
 			Start: nameStartPos,
 			End:   nameEndPos,
 		},
-		Children:     []*Symbol{},
-		SuperClasses: []*Symbol{superClass},
+		Children: []*Symbol{},
 	}
+	if superClassName != "" {
+		symbol.superClassesNames = append(symbol.superClassesNames, superClassName)
+	}
+	return symbol
+}
+
+func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) (*Symbol, error) {
+	// Trey to find symbol inside the same file
+	fileSymbols, err := f.FileSymbols("")
+	if err != nil {
+		return nil, err
+	}
+	for _, fsymb := range fileSymbols {
+		if fsymb.Name == symbol.Name {
+			symbol.SuperClasses = append(symbol.SuperClasses, fsymb)
+			return fsymb, nil
+		}
+	}
+	// Try to find symbol in the import
+	imports, err := f.GetImports()
+	if err != nil {
+		return nil, err
+	}
+	for _, imp := range imports {
+		if imp.ImportedName == symbol.Name {
+			symbol.SuperClasses = append(symbol.SuperClasses, imp.Symbol)
+			return imp.Symbol, nil
+		}
+	}
+	return nil, fmt.Errorf("superclass %s not found in imports", symbol.Name)
 }
 
 func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *tree_sitter.Query) []*Symbol {
@@ -276,7 +312,7 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 	for match := matches.Next(); match != nil; match = matches.Next() {
 
 		var name, params, returnType string
-		var superClass *Symbol
+		var superClass string
 		var kind messages.SymbolKind
 		var startPos, endPos, nameStartPos, nameEndPos messages.Position
 		for _, capture := range match.Captures {
@@ -304,11 +340,17 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 			case "function.params", "method.params":
 				params = captureText
 			case "class.superclass":
-				for _, classSymbol := range classSymbols {
-					if classSymbol.Name == captureText {
-						superClass = classSymbol
-					}
-				}
+				superClass = captureText
+				// for _, classSymbol := range classSymbols {
+				// 	if classSymbol.Name == captureText {
+				// 		superClass = classSymbol
+				// 	}
+				// }
+				// if superClass == nil {
+				//
+				// 	slog.Debug("Resolving external superclass", slog.String("name", captureText))
+				// 	superClass, _ = resolveExternalSuperclassSymbol(pythonFile, captureText)
+				// }
 			case "function.return_type", "method.return_type":
 				returnType = captureText
 			case "function.body", "class.body", "method.body":
@@ -330,7 +372,7 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 			fullName += fmt.Sprintf(" -> %s", returnType)
 		}
 		if kind == messages.SymbolKindMethod {
-			newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, nil)
+			newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, "")
 			for _, classSymbol := range classSymbols {
 				if isChildOf(newSymbol, classSymbol) {
 					newSymbol.Parent = classSymbol
@@ -341,14 +383,16 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 		} else if kind == messages.SymbolKindClass {
 			key := fmt.Sprintf("%s:%d:%d", name, nameStartPos.Line, nameStartPos.Character)
 			symbol, exists := classSymbols[key]
+			// Create new symbol if it doesn't exist
 			if !exists {
 				newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, superClass)
 				classSymbols[key] = newSymbol
-			} else if superClass != nil {
-				symbol.SuperClasses = append(symbol.SuperClasses, superClass)
+			} else if superClass != "" {
+				// Update existing symbol with superclass
+				symbol.superClassesNames = append(symbol.superClassesNames, superClass)
 			}
 		} else {
-			newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, nil)
+			newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, "")
 			moduleSymbols = append(moduleSymbols, newSymbol)
 		}
 	}
