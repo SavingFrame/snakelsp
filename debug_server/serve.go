@@ -59,9 +59,6 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 
 	workspace.ProjectFiles.Range(func(_, value interface{}) bool {
 		if file, ok := value.(*workspace.PythonFile); ok {
-			// if !file.External {
-			// 	files = append(files, file)
-			// }
 			files = append(files, file)
 		}
 		return true

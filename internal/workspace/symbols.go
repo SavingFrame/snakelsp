@@ -17,6 +17,7 @@ import (
 	tree_sitter_python "github.com/tree-sitter/tree-sitter-python/bindings/go"
 )
 
+// TODO: Now we have duplications of symbols in the flatSymbols, because BulkParseSymbols conflicts with ParseSymbols, and if you use both, you will have duplicates.
 type Symbol struct {
 	UUID       uuid.UUID
 	Name       string
@@ -92,6 +93,7 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 			flatSymbols.Set(symbol.UUID, symbol)
 			for _, children := range symbol.Children {
 				flatSymbols.Set(children.UUID, children)
+				resolveExternalSuperclassSymbol(pythonFile, children)
 			}
 		}
 		return true
@@ -279,30 +281,36 @@ func createSymbol(
 	return symbol
 }
 
-func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) (*Symbol, error) {
+func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) *Symbol {
 	// Trey to find symbol inside the same file
 	fileSymbols, err := f.FileSymbols("")
 	if err != nil {
-		return nil, err
+		slog.Warn("Unable to get symbols for resolving superclass", slog.String("file", f.Url), "error", err)
+		return symbol
 	}
 	for _, fsymb := range fileSymbols {
-		if fsymb.Name == symbol.Name {
-			symbol.SuperClasses = append(symbol.SuperClasses, fsymb)
-			return fsymb, nil
+		for _, superClassName := range symbol.superClassesNames {
+			if fsymb.Name == superClassName {
+				symbol.SuperClasses = append(symbol.SuperClasses, fsymb)
+				return symbol
+			}
 		}
 	}
 	// Try to find symbol in the import
 	imports, err := f.GetImports()
 	if err != nil {
-		return nil, err
+		slog.Warn("Unable to get import for resolving superclass", slog.String("file", f.Url), "error", err)
+		return symbol
 	}
 	for _, imp := range imports {
-		if imp.ImportedName == symbol.Name {
-			symbol.SuperClasses = append(symbol.SuperClasses, imp.Symbol)
-			return imp.Symbol, nil
+		for _, superClassName := range symbol.superClassesNames {
+			if imp.ImportedName == superClassName {
+				symbol.SuperClasses = append(symbol.SuperClasses, imp.Symbol)
+				return symbol
+			}
 		}
 	}
-	return nil, fmt.Errorf("superclass %s not found in imports", symbol.Name)
+	return symbol
 }
 
 func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *tree_sitter.Query) []*Symbol {

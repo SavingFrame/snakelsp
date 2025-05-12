@@ -68,7 +68,7 @@ func NewPythonFile(url string, text string, external, isOpen bool) *PythonFile {
 	if isOpen {
 		OpenFiles.Store(url, pythonFile)
 	}
-	ProjectFiles.Store(url, pythonFile)
+	ProjectFiles.LoadOrStore(url, pythonFile)
 	return pythonFile
 }
 
