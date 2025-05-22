@@ -17,4 +17,5 @@ var Handlers = map[string]RequestHandler{
 	"$/cancelRequest":                   HandleCancelRequest,
 	"textDocument/prepareTypeHierarchy": HandlePrepareTypeHierarchy,
 	"typeHierarchy/supertypes":          HandleTypeHierarchySuperTypes,
+	"textDocument/implementation":       HandleSymbolImplementation,
 }

@@ -17,7 +17,6 @@ import (
 	tree_sitter_python "github.com/tree-sitter/tree-sitter-python/bindings/go"
 )
 
-// TODO: Now we have duplications of symbols in the flatSymbols, because BulkParseSymbols conflicts with ParseSymbols, and if you use both, you will have duplicates.
 type Symbol struct {
 	UUID       uuid.UUID
 	Name       string
@@ -34,8 +33,8 @@ type Symbol struct {
 	// Base classes for class
 	// TODO: 1. Parse superclasses with attributes
 	// 2. Parse imports and superclasses from related files
-	SuperClasses      []*Symbol
-	superClassesNames []string
+	SuperObjects      []*Symbol
+	superObjectsNames []string
 }
 
 var (
@@ -94,6 +93,9 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 			for _, children := range symbol.Children {
 				flatSymbols.Set(children.UUID, children)
 				resolveExternalSuperclassSymbol(pythonFile, children)
+				if children.Kind == messages.SymbolKindMethod {
+					resolveExternalSuperMethodSymbol(pythonFile, children)
+				}
 			}
 		}
 		return true
@@ -111,14 +113,6 @@ func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 		var err error
 		symbols, err = f.parseSymbols()
 		WorkspaceSymbols.Store(f, symbols)
-		if !f.External {
-			for _, symbol := range symbols {
-				flatSymbols.Set(symbol.UUID, symbol)
-				for _, children := range symbol.Children {
-					flatSymbols.Set(children.UUID, children)
-				}
-			}
-		}
 		if err != nil {
 			return nil, err
 		}
@@ -276,9 +270,31 @@ func createSymbol(
 		Children: []*Symbol{},
 	}
 	if superClassName != "" {
-		symbol.superClassesNames = append(symbol.superClassesNames, superClassName)
+		symbol.superObjectsNames = append(symbol.superObjectsNames, superClassName)
 	}
 	return symbol
+}
+
+func resolveExternalSuperMethodSymbol(f *PythonFile, symbol *Symbol) *Symbol {
+	classSymbol := symbol.Parent
+	if classSymbol == nil {
+		return nil
+	}
+	var superObject *Symbol
+	if !f.External {
+		slog.Info("Resolving superclass", slog.String("class", classSymbol.Name), slog.String("method", symbol.Name), slog.Int("superObjects", len(classSymbol.SuperObjects)))
+	}
+	if len(classSymbol.SuperObjects) > 0 {
+		for _, superClassMethod := range classSymbol.SuperObjects[0].Children {
+			if superClassMethod.Name == symbol.Name {
+				symbol.SuperObjects = append(symbol.SuperObjects, superClassMethod)
+				symbol.superObjectsNames = append(symbol.superObjectsNames, superClassMethod.Name)
+				superObject = superClassMethod
+
+			}
+		}
+	}
+	return superObject
 }
 
 func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) *Symbol {
@@ -289,9 +305,9 @@ func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) *Symbol {
 		return symbol
 	}
 	for _, fsymb := range fileSymbols {
-		for _, superClassName := range symbol.superClassesNames {
+		for _, superClassName := range symbol.superObjectsNames {
 			if fsymb.Name == superClassName {
-				symbol.SuperClasses = append(symbol.SuperClasses, fsymb)
+				symbol.SuperObjects = append(symbol.SuperObjects, fsymb)
 				return symbol
 			}
 		}
@@ -303,9 +319,9 @@ func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) *Symbol {
 		return symbol
 	}
 	for _, imp := range imports {
-		for _, superClassName := range symbol.superClassesNames {
+		for _, superClassName := range symbol.superObjectsNames {
 			if imp.ImportedName == superClassName {
-				symbol.SuperClasses = append(symbol.SuperClasses, imp.Symbol)
+				symbol.SuperObjects = append(symbol.SuperObjects, imp.Symbol)
 				return symbol
 			}
 		}
@@ -349,16 +365,6 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 				params = captureText
 			case "class.superclass":
 				superClass = captureText
-				// for _, classSymbol := range classSymbols {
-				// 	if classSymbol.Name == captureText {
-				// 		superClass = classSymbol
-				// 	}
-				// }
-				// if superClass == nil {
-				//
-				// 	slog.Debug("Resolving external superclass", slog.String("name", captureText))
-				// 	superClass, _ = resolveExternalSuperclassSymbol(pythonFile, captureText)
-				// }
 			case "function.return_type", "method.return_type":
 				returnType = captureText
 			case "function.body", "class.body", "method.body":
@@ -397,7 +403,7 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 				classSymbols[key] = newSymbol
 			} else if superClass != "" {
 				// Update existing symbol with superclass
-				symbol.superClassesNames = append(symbol.superClassesNames, superClass)
+				symbol.superObjectsNames = append(symbol.superObjectsNames, superClass)
 			}
 		} else {
 			newSymbol := createSymbol(name, kind, params, returnType, fullName, pythonFile, startPos, endPos, nameStartPos, nameEndPos, "")

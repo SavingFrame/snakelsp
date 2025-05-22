@@ -27,7 +27,6 @@ func HandlePrepareTypeHierarchy(r *request.Request) (any, error) {
 		r.Logger.Error("Error finding symbol by position: %v", slog.Any("error", err))
 		return nil, nil
 	}
-	slog.Debug("Response: %v", slog.Any("response", symbol))
 	return []messages.CallHierarchyItem{
 		{
 			Name:           symbol.Name,
@@ -58,11 +57,12 @@ func HandleTypeHierarchySuperTypes(r *request.Request) (any, error) {
 		return nil, err
 	}
 	superClasses := []messages.TypeHierarchyItem{}
-	for _, superClass := range symbol.SuperClasses {
+	slog.Info("type hierarchy super classes", slog.Any("superClasses", symbol.SuperObjects))
+	for _, superClass := range symbol.SuperObjects {
 		superClasses = append(superClasses, messages.TypeHierarchyItem{
 			Name:           superClass.Name,
 			Kind:           superClass.Kind,
-			Detail:         superClass.FullName,
+			Detail:         superClass.SymbolNameWithParent(),
 			URI:            superClass.File.Url,
 			Range:          &superClass.Range,
 			SelectionRange: &superClass.NameRange,

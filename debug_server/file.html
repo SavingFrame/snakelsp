@@ -127,9 +127,9 @@
 				<td>{{.Symbol.Range.Start.Line}}:{{.Symbol.Range.Start.Character}}</td>
 				<td>{{.Symbol.Range.End.Line}}:{{.Symbol.Range.End.Character}}</td>
 				<td>
-					{{range .Symbol.SuperClasses}}
+					{{range .Symbol.SuperObjects}}
 						{{if .}}
-							<p>{{.FullName}}</p>
+							<p>{{.SymbolNameWithParent}}</p>
 						{{else}}
 							None
 						{{end}}
