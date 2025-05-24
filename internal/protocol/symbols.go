@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"log/slog"
+
 	"snakelsp/internal/messages"
 	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"

@@ -160,7 +160,7 @@ func (s *Symbol) SymbolNameWithParent() string {
 	if s.Parent == nil {
 		return s.Name
 	}
-	return fmt.Sprintf("%s.%s", s.Parent.Name, s.Name)
+	return fmt.Sprintf("%s.%s", s.Parent.Name, s.FullName)
 }
 
 func filterSymbols(symbols []*Symbol, query string) ([]*Symbol, error) {

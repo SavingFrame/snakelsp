@@ -42,6 +42,7 @@ type serverCapabilities struct {
 	DocumentSymbolProvider  bool                     `json:"documentSymbolProvider"`
 	TypeHierarchyProvider   bool                     `json:"typeHierarchyProvider"`
 	ImplementationProvider  bool                     `json:"implementationProvider"`
+	DeclarationProvider     bool                     `json:"declarationProvider"`
 }
 
 type InitializeResult struct {
@@ -61,6 +62,7 @@ func NewInitializeResult() *InitializeResult {
 			DocumentSymbolProvider:  true,
 			TypeHierarchyProvider:   true,
 			ImplementationProvider:  false,
+			DeclarationProvider:     true,
 		},
 		ServerInfo: &serverInfo{
 			Name:    "SnakeLSP",
