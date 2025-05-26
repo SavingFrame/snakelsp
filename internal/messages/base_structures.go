@@ -105,3 +105,8 @@ type Location struct {
 	URI   DocumentUri `json:"uri"`
 	Range Range       `json:"range"`
 }
+
+type (
+	ResourceOperationKind string
+	FailureHandlingKind   string
+)

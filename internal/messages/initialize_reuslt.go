@@ -1,5 +1,7 @@
 package messages
 
+import "log/slog"
+
 type serverInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
@@ -50,19 +52,20 @@ type InitializeResult struct {
 	ServerCapabilities *serverCapabilities `json:"capabilities"`
 }
 
-func NewInitializeResult() *InitializeResult {
+func NewInitializeResult(initializeParam *InitializeParams) *InitializeResult {
+	slog.Debug("Document sync options", slog.Any("capabilities", initializeParam.Capabilities.TextDocument.DocumentSymbol))
 	return &InitializeResult{
 		ServerCapabilities: &serverCapabilities{
 			TextDocumentSync: &textDocumentSyncOptions{
 				OpenClose: true,
 				Change:    TextDocumentSyncKindIncremental,
 			},
-			DefinitionProvider:      true,
-			WorkspaceSymbolProvider: true,
-			DocumentSymbolProvider:  true,
-			TypeHierarchyProvider:   true,
+			DefinitionProvider:      false,
+			WorkspaceSymbolProvider: initializeParam.Capabilities.Workspace.Symbol != nil,
+			DocumentSymbolProvider:  initializeParam.Capabilities.TextDocument.DocumentSymbol != nil,
+			TypeHierarchyProvider:   initializeParam.Capabilities.TextDocument.CallHierarchy != nil,
 			ImplementationProvider:  false,
-			DeclarationProvider:     true,
+			DeclarationProvider:     initializeParam.Capabilities.TextDocument.Declaration != nil,
 		},
 		ServerInfo: &serverInfo{
 			Name:    "SnakeLSP",
