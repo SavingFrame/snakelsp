@@ -50,7 +50,8 @@ func SearchSymbolByUUID(uuid uuid.UUID) (*Symbol, error) {
 	return symbol, nil
 }
 
-func (f *PythonFile) parseSymbols() ([]*Symbol, error) {
+// It just parse symbols from the file and doesn't store them in the WorkspaceSymbols
+func (f *PythonFile) parseFileSymbols() ([]*Symbol, error) {
 	qc := tree_sitter.NewQueryCursor()
 	defer qc.Close()
 	language := tree_sitter.NewLanguage(tree_sitter_python.Language())
@@ -105,13 +106,43 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 	return nil
 }
 
+func (f *PythonFile) parseSymbols() ([]*Symbol, error) {
+	if f.External {
+		return nil, errors.New("cannot parse symbols for external files")
+	}
+	qc := tree_sitter.NewQueryCursor()
+	defer qc.Close()
+	language := tree_sitter.NewLanguage(tree_sitter_python.Language())
+	query, err := tree_sitter.NewQuery(language, getTreeSitterQuery())
+	if err != nil {
+		slog.Error("Error creating query", "error", err)
+		return nil, err
+	}
+	symbols := processSymbols(f, qc, query)
+	for _, symbol := range symbols {
+		resolveExternalSuperclassSymbol(f, symbol)
+	}
+	WorkspaceSymbols.Store(f, symbols)
+	for _, symbol := range symbols {
+		flatSymbols.Set(symbol.UUID, symbol)
+		for _, children := range symbol.Children {
+			flatSymbols.Set(children.UUID, children)
+			resolveExternalSuperclassSymbol(f, children)
+			if children.Kind == messages.SymbolKindMethod {
+				resolveExternalSuperMethodSymbol(f, children)
+			}
+		}
+	}
+	return symbols, nil
+}
+
 func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 	var symbols []*Symbol
 
 	value, exists := WorkspaceSymbols.Load(f)
 	if !exists {
 		var err error
-		symbols, err = f.parseSymbols()
+		symbols, err = f.parseFileSymbols()
 		WorkspaceSymbols.Store(f, symbols)
 		if err != nil {
 			return nil, err
@@ -320,7 +351,7 @@ func resolveExternalSuperclassSymbol(f *PythonFile, symbol *Symbol) *Symbol {
 	}
 	for _, imp := range imports {
 		for _, superClassName := range symbol.superObjectsNames {
-			if imp.ImportedName == superClassName {
+			if imp.ImportedName == superClassName && imp.Symbol != nil {
 				symbol.SuperObjects = append(symbol.SuperObjects, imp.Symbol)
 				return symbol
 			}

@@ -35,7 +35,7 @@ func HandleInitialize(r *request.Request) (any, error) {
 		symbolsProgress := progress.NewWorkDone(r.Client)
 		workspace.BulkParseSymbols(symbolsProgress)
 	}()
-	initializeResult := messages.NewInitializeResult()
+	initializeResult := messages.NewInitializeResult(&data)
 	return initializeResult, nil
 }
 

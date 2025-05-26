@@ -41,7 +41,7 @@ def multiple_decoration_function(param3):
 	}
 
 	// Parse symbols
-	symbols, err := mockFile.ParseSymbols()
+	symbols, err := mockFile.parseSymbols()
 	assert.NoError(t, err)
 
 	// Verify parsed symbols

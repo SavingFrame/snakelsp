@@ -22,8 +22,12 @@ type Import struct {
 }
 
 func (f *PythonFile) ParseImports() ([]Import, error) {
-	slog.Debug("Parse Imports")
-	return f.parseImports(true)
+	imports, err := f.parseImports(true)
+	if err != nil {
+		return nil, err
+	}
+	f.Imports = imports
+	return imports, nil
 }
 
 func (f *PythonFile) parseImports(withResolvedSymbols bool) ([]Import, error) {
@@ -186,6 +190,7 @@ func processImports(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 	}
 	return imports
 }
+
 func getTreeSitterImportQuery() string {
 	return `
 ;; import pandas

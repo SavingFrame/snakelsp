@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"log/slog"
+
 	"snakelsp/internal/messages"
 	"snakelsp/internal/request"
 	"snakelsp/internal/workspace"
@@ -87,6 +88,13 @@ func findDefinition(astRoot *tree_sitter.Node, symbol string, cursorNode *tree_s
 	return nil
 }
 
+func extractTextFromNode(p *workspace.PythonFile, node *tree_sitter.Node) string {
+	startByte := node.StartByte()
+	endByte := node.EndByte()
+
+	return string(p.Text[startByte:endByte])
+}
+
 func HandleGotoDefinition(r *request.Request) (interface{}, error) {
 	var data messages.DefinitionParams
 	err := json.Unmarshal(r.Params, &data)
@@ -103,7 +111,7 @@ func HandleGotoDefinition(r *request.Request) (interface{}, error) {
 		tree_sitter.Point{Row: uint(data.Position.Line), Column: uint(data.Position.Character)},
 		tree_sitter.Point{Row: uint(data.Position.Line), Column: uint(data.Position.Character)},
 	)
-	nodeText := pythonFile.ExtractTextFromNode(foundedNode)
+	nodeText := extractTextFromNode(pythonFile, foundedNode)
 	definitionNode := findDefinition(astRoot, nodeText, foundedNode, []byte(pythonFile.Text), r.Logger)
 	if definitionNode == nil {
 		return nil, nil
