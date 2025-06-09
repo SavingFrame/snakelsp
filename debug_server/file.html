@@ -1,150 +1,245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>File: {{.File.Url}}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>File: {{ .File.Url }}</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-        h1, h2 { color: #333; }
-        a { text-decoration: none; color: #0066cc; }
-        a:hover { text-decoration: underline; }
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      a {
+        text-decoration: none;
+        color: #0066cc;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
-        }
-        th {
-            background-color: #f0f0f0;
-        }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+      }
+      th {
+        background-color: #f0f0f0;
+      }
 
-        .section {
-            margin-bottom: 40px;
-        }
+      .section {
+        margin-bottom: 40px;
+      }
 
-        .back-link {
-            display: inline-block;
-            margin-top: 30px;
-        }
+      .back-link {
+        display: inline-block;
+        margin-top: 30px;
+      }
     </style>
-</head>
-<body>
-
-    <h1>📄 File: {{.File.Url}}</h1>
+  </head>
+  <body>
+    <h1>📄 File: {{ .File.Url }}</h1>
     <div class="section">
-        <h2>ℹ️ Information</h2>
-        <table>
-            <tbody>
-                <tr>
-                    <th>URL</th>
-                    <td>{{.File.Url}}</td>
-                </tr>
-                <tr>
-                    <th>External</th>
-                    <td>
-                        {{if .File.External}}
-                            Yes
-                        {{else}}
-                            No
-                        {{end}}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+      <h2>ℹ️ Information</h2>
+      <table>
+        <tbody>
+          <tr>
+            <th>URL</th>
+            <td>{{ .File.Url }}</td>
+          </tr>
+          <tr>
+            <th>External</th>
+            <td>
+              {{ if .File.External }}
+                Yes
+              {{ else }}
+                No
+              {{ end }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <div class="section">
-        <h2>🔗 Imports</h2>
-        {{if .Imports}}
+      <h2>🔗 Imports</h2>
+      {{ if .Imports }}
         <table>
-            <thead>
-                <tr>
-                    <th>Source Module</th>
-                    <th>Imported Name</th>
-                    <th>Alias</th>
-					<th>File</th>
-					<th>Symbol name</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .Imports}}
-                <tr>
-                    <td>{{.SourceModule}}</td>
-                    <td>{{.ImportedName}}</td>
-                    <td>{{.Alias}}</td>
-					<td>
-						{{if .PythonFile}}
-							<a href="/file?url={{.PythonFile.Url}}">{{.PythonFile.Url}}</a>
-						{{else}}
-							None
-						{{end}}
-					</td>
-					<td>
-						{{if .Symbol}}
-							{{.Symbol.Name}}
-						{{else}}
-							None
-						{{end}}
-					</td>
-                </tr>
-                {{end}}
-            </tbody>
+          <thead>
+            <tr>
+              <th>Source Module</th>
+              <th>Imported Name</th>
+              <th>Alias</th>
+              <th>File</th>
+              <th>Symbol name</th>
+              <th>Symbol UUID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ range .Imports }}
+              <tr>
+                <td>{{ .SourceModule }}</td>
+                <td>{{ .ImportedName }}</td>
+                <td>{{ .Alias }}</td>
+                <td>
+                  {{ if .PythonFile }}
+                    <a href="/file?url={{ .PythonFile.Url }}"
+                      >{{ .PythonFile.Url }}</a
+                    >
+                  {{ else }}
+                    None
+                  {{ end }}
+                </td>
+                <td>
+                  {{ if .Symbol }}
+                    {{ .Symbol.Name }}
+                  {{ else }}
+                    None
+                  {{ end }}
+                </td>
+                <td>
+                  {{ if .Symbol }}
+                    {{ .Symbol.UUID }}
+                  {{ else }}
+                    None
+                  {{ end }}
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
         </table>
-        {{else}}
+      {{ else }}
         <p>No imports found.</p>
-        {{end}}
+      {{ end }}
     </div>
 
     <div class="section">
-        <h2>🏛️ Symbols</h2>
-	{{if .SymbolsFlat}}
-	<table>
-		<thead>
-			<tr>
-				<th>Full Signature</th>
-				<th>Kind</th>
-				<th>Name</th>
-				<th>Start (Line:Char)</th>
-				<th>End (Line:Char)</th>
-				<th>Superclass UUIDs</th>
-			</tr>
-		</thead>
-		<tbody>
-			{{range .SymbolsFlat}}
-			<tr style="transform: translateX({{multiply .Depth 20}}px);">
-				<td>{{.Symbol.FullName}}</td>
-				<td>{{.Symbol.Kind}}</td>
-				<td>{{.Symbol.Name}}</td>
-				<td>{{.Symbol.Range.Start.Line}}:{{.Symbol.Range.Start.Character}}</td>
-				<td>{{.Symbol.Range.End.Line}}:{{.Symbol.Range.End.Character}}</td>
-				<td>
-					{{range .Symbol.SuperObjects}}
-						{{if .}}
-							<p>{{.SymbolNameWithParent}}</p>
-						{{else}}
-							None
-						{{end}}
-					{{end}}
-				</td>
-			</tr>
-			{{end}}
-		</tbody>
-	</table>
-	{{else}}
-		<p>No symbols found.</p>
-	{{end}}
+      <h2>🏛️ FlatSymbols</h2>
+      {{ if .SymbolsFlat }}
+        <table>
+          <thead>
+            <tr>
+              <th>Full Signature</th>
+              <th>UUID</th>
+              <th>Kind</th>
+              <th>Name</th>
+              <th>Start (Line:Char)</th>
+              <th>End (Line:Char)</th>
+              <th>Superclass UUIDs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ range .SymbolsFlat }}
+              <tr style="transform: translateX({{ multiply .Depth 20 }}px);">
+                <td>{{ .Symbol.FullName }}</td>
+                <td>{{ .Symbol.UUID }}</td>
+                <td>{{ .Symbol.Kind }}</td>
+                <td>{{ .Symbol.Name }}</td>
+                <td>
+                  {{ .Symbol.Range.Start.Line }}:{{ .Symbol.Range.Start.Character }}
+                </td>
+                <td>
+                  {{ .Symbol.Range.End.Line }}:{{ .Symbol.Range.End.Character }}
+                </td>
+                <td>
+                  {{ range .Symbol.SuperObjects }}
+                    {{ if . }}
+                      <p>{{ .SymbolNameWithParent }}</p>
+                      <p>{{ .UUID }}</p>
+                    {{ else }}
+                      None
+                    {{ end }}
+                  {{ end }}
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      {{ else }}
+        <p>No symbols found.</p>
+      {{ end }}
     </div>
 
-    <a class="back-link" href="/">⬅️ Back to File List</a>
+    <div class="section">
+      <h2>🏛️ DefaultSymbols</h2>
+      {{ if .ProjectSymbols }}
+        <table>
+          <thead>
+            <tr>
+              <th>Full Signature</th>
+              <th>UUID</th>
+              <th>Kind</th>
+              <th>Name</th>
+              <th>Start (Line:Char)</th>
+              <th>End (Line:Char)</th>
+              <th>Superclass UUIDs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ range .ProjectSymbols }}
+              <tr style="transform: translateX({{ multiply .Depth 20 }}px);">
+                <td>{{ .Symbol.FullName }}</td>
+                <td>{{ .Symbol.UUID }}</td>
+                <td>{{ .Symbol.Kind }}</td>
+                <td>{{ .Symbol.Name }}</td>
+                <td>
+                  {{ .Symbol.Range.Start.Line }}:{{ .Symbol.Range.Start.Character }}
+                </td>
+                <td>
+                  {{ .Symbol.Range.End.Line }}:{{ .Symbol.Range.End.Character }}
+                </td>
+                <td>
+                  {{ if .Symbol.SuperObjects }}
+                    {{ range .Symbol.SuperObjects }}
+                      {{ if . }}
+                        <p>{{ .SymbolNameWithParent }}</p>
+                        <p>{{ .UUID }}</p>
+                      {{ else }}
+                        <p>None</p>
+                      {{ end }}
+                    {{ end }}
+                  {{ else }}
+                    <p>None</p>
+                  {{ end }}
+                </td>
+              </tr>
 
-</body>
+              {{ if .Symbol.Children }}
+                {{ range .Symbol.Children }}
+                  <tr>
+                    <td>{{ .SymbolNameWithParent }}</td>
+                    <td>{{ .UUID }}</td>
+                    <td>{{ .Kind }}</td>
+                    <td>{{ .Name }}</td>
+                    <td>nothing</td>
+                    <td>nothing</td>
+                    <td>nothing</td>
+                  </tr>
+                {{ end }}
+                <!-- end range Symbol.Children -->
+              {{ end }}
+              <!-- end if Symbol.Children -->
+            {{ end }}
+            <!-- end range ProjectSymbols -->
+          </tbody>
+        </table>
+      {{ else }}
+        <p>No symbols found.</p>
+      {{ end }}
+    </div>
+    <a class="back-link" href="/">⬅️ Back to File List</a>
+  </body>
 </html>

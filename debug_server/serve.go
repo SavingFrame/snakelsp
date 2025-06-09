@@ -23,17 +23,8 @@ type RenderSymbol struct {
 	Depth  int
 }
 
-func flattenSymbols(symbols []*workspace.Symbol, depth int) []RenderSymbol {
-	var result []RenderSymbol
-	for _, sym := range symbols {
-		result = append(result, RenderSymbol{Symbol: sym, Depth: depth})
-		result = append(result, flattenSymbols(sym.Children, depth+1)...) // recursion
-	}
-	return result
-}
 func loadTemplates() {
-
-	var templateFuncs = template.FuncMap{
+	templateFuncs := template.FuncMap{
 		"multiply": func(a, b int) int { return a * b },
 	}
 	once.Do(func() {
@@ -57,7 +48,7 @@ func StartHTTPServer(addr string) {
 func handleHome(w http.ResponseWriter, r *http.Request) {
 	var files []*workspace.PythonFile
 
-	workspace.ProjectFiles.Range(func(_, value interface{}) bool {
+	workspace.ProjectFiles.Range(func(_, value any) bool {
 		if file, ok := value.(*workspace.PythonFile); ok {
 			files = append(files, file)
 		}
@@ -93,23 +84,40 @@ func handleFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var symbols []*workspace.Symbol
-	wsSymbols, ok := workspace.WorkspaceSymbols.Load(pythonFile)
 	var flatSymbols []RenderSymbol
-	if ok {
-		symbols = wsSymbols.([]*workspace.Symbol)
-		flatSymbols = flattenSymbols(symbols, 0) // Create flattened recursive display list
+	for _, s := range workspace.FlatSymbols.AllFromBack() {
+		if s.File.Url == pythonFile.Url {
+			flatSymbols = append(flatSymbols, RenderSymbol{
+				Symbol: s,
+				Depth:  0,
+			})
+		}
 	}
-	slog.Debug("Amount of symbols", slog.Int("amount", len(symbols)))
 
-	slog.Debug("Amount of imports", slog.Int("amount", len(pythonFile.Imports)))
+	var projectSymbols []RenderSymbol
+	fileSymbols, exists := workspace.WorkspaceSymbols.Load(pythonFile)
+	if exists {
+
+		fs, ok := fileSymbols.([]*workspace.Symbol)
+		if ok {
+			for _, s := range fs {
+				projectSymbols = append(projectSymbols, RenderSymbol{
+					Symbol: s,
+					Depth:  0,
+				})
+			}
+		}
+	}
+
 	templates.ExecuteTemplate(w, "file.html", struct {
-		File        *workspace.PythonFile
-		SymbolsFlat []RenderSymbol
-		Imports     []workspace.Import
+		File           *workspace.PythonFile
+		SymbolsFlat    []RenderSymbol
+		ProjectSymbols []RenderSymbol
+		Imports        []workspace.Import
 	}{
-		File:        pythonFile,
-		SymbolsFlat: flatSymbols,
-		Imports:     pythonFile.Imports,
+		File:           pythonFile,
+		SymbolsFlat:    flatSymbols,
+		ProjectSymbols: projectSymbols,
+		Imports:        pythonFile.Imports,
 	})
 }
