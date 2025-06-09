@@ -16,12 +16,13 @@ func (s *Server) newStreamConnection(stream io.ReadWriteCloser) *jsonrpc2.Conn {
 }
 
 func (s *Server) newConnectionOptions() []jsonrpc2.ConnOpt {
-	if s.debug {
-		return []jsonrpc2.ConnOpt{
-			jsonrpc2.LogMessages(&JsonRpcLogger{}),
-		}
-		// return nil
-	} else {
-		return nil
-	}
+	// if s.debug {
+	// 	return []jsonrpc2.ConnOpt{
+	// 		jsonrpc2.LogMessages(&JsonRpcLogger{}),
+	// 	}
+	// 	// return nil
+	// } else {
+	// 	return nil
+	// }
+	return nil
 }

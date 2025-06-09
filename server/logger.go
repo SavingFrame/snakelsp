@@ -6,12 +6,15 @@ import (
 	"io"
 	"log"
 	"log/slog"
+	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type JsonRpcLogger struct{}
 
-func (l *JsonRpcLogger) Printf(format string, v ...interface{}) {
+func (l *JsonRpcLogger) Printf(format string, v ...any) {
 	log.Printf(format, v...)
 }
 
@@ -32,11 +35,21 @@ func (h *CustomTextHandler) Enabled(_ context.Context, level slog.Level) bool {
 }
 
 func (h *CustomTextHandler) Handle(_ context.Context, record slog.Record) error {
-	timestamp := time.Now().Format(time.RFC3339) // Customize timestamp if needed
-	level := record.Level.String()               // Get the log level as string
-	message := record.Message                    // Default log message (no escaping)
+	timestamp := time.Now().Format(time.DateTime) // Customize timestamp if needed
+	level := record.Level.String()                // Get the log level as string
+	message := record.Message                     // Default log message (no escaping)
 
-	fmt.Fprintf(h.writer, "time=%s level=%s msg=%s\n", timestamp, level, message)
+	// Force colors to be enabled even when writing to files
+	color.NoColor = false
+
+	green := color.New(color.FgGreen).SprintFunc()
+	cyan := color.New(color.FgHiCyan).SprintFunc()
+	blue := color.New(color.FgBlue).SprintFunc()
+
+	if !strings.HasPrefix(message, "jsonrpc2") {
+		message = blue(message)
+	}
+	fmt.Fprintf(h.writer, "%s | %s | %s\n", green(timestamp), cyan(level), message)
 
 	record.Attrs(func(attr slog.Attr) bool {
 		// Special handling to ensure attributes with "\n" remain unescaped
