@@ -64,7 +64,7 @@ func NewInitializeResult(initializeParam *InitializeParams) *InitializeResult {
 			WorkspaceSymbolProvider: initializeParam.Capabilities.Workspace.Symbol != nil,
 			DocumentSymbolProvider:  initializeParam.Capabilities.TextDocument.DocumentSymbol != nil,
 			TypeHierarchyProvider:   initializeParam.Capabilities.TextDocument.CallHierarchy != nil,
-			ImplementationProvider:  false,
+			ImplementationProvider:  true,
 			DeclarationProvider:     initializeParam.Capabilities.TextDocument.Declaration != nil,
 		},
 		ServerInfo: &serverInfo{

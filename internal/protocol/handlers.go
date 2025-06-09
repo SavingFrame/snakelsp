@@ -18,4 +18,5 @@ var Handlers = map[string]RequestHandler{
 	"textDocument/prepareTypeHierarchy": HandlePrepareTypeHierarchy,
 	"typeHierarchy/supertypes":          HandleTypeHierarchySuperTypes,
 	"textDocument/declaration":          HandleSymbolDeclaration,
+	"textDocument/implementation":       HandleSymbolImplementation,
 }

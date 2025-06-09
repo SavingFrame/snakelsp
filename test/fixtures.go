@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"snakelsp/server"
 	"testing"
 	"time"
+
+	"snakelsp/server"
 )
 
 func ServerFixture(t *testing.T) (stdinWriter io.WriteCloser, stdoutReader *bufio.Reader, done chan bool, ready chan struct{}) {

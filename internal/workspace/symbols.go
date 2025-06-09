@@ -39,11 +39,11 @@ type Symbol struct {
 
 var (
 	WorkspaceSymbols sync.Map
-	flatSymbols      *orderedmap.OrderedMap[uuid.UUID, *Symbol] = orderedmap.NewOrderedMap[uuid.UUID, *Symbol]()
+	FlatSymbols      *orderedmap.OrderedMap[uuid.UUID, *Symbol] = orderedmap.NewOrderedMap[uuid.UUID, *Symbol]()
 )
 
 func SearchSymbolByUUID(uuid uuid.UUID) (*Symbol, error) {
-	symbol, exists := flatSymbols.Get(uuid)
+	symbol, exists := FlatSymbols.Get(uuid)
 	if !exists {
 		return nil, fmt.Errorf("symbol not found")
 	}
@@ -84,23 +84,33 @@ func BulkParseSymbols(pr *progress.WorkDone) error {
 		if pythonFile.External {
 			return true
 		}
-		symbols := processSymbols(pythonFile, qc, query)
-		for _, symbol := range symbols {
-			resolveExternalSuperclassSymbol(pythonFile, symbol)
-		}
-		WorkspaceSymbols.Store(pythonFile, symbols)
-		for _, symbol := range symbols {
-			flatSymbols.Set(symbol.UUID, symbol)
-			for _, children := range symbol.Children {
-				flatSymbols.Set(children.UUID, children)
-				resolveExternalSuperclassSymbol(pythonFile, children)
-				if children.Kind == messages.SymbolKindMethod {
-					resolveExternalSuperMethodSymbol(pythonFile, children)
+
+		// Get existing symbols if they exist
+		existingSymbols, hasExisting := WorkspaceSymbols.Load(pythonFile)
+		newSymbols := processSymbols(pythonFile, qc, query)
+
+		if hasExisting {
+			// Update existing symbols in place to preserve references
+			updateSymbolsInPlace(existingSymbols.([]*Symbol), newSymbols)
+		} else {
+			// Store new symbols
+			WorkspaceSymbols.Store(pythonFile, newSymbols)
+			for _, symbol := range newSymbols {
+				FlatSymbols.Set(symbol.UUID, symbol)
+				for _, children := range symbol.Children {
+					FlatSymbols.Set(children.UUID, children)
 				}
 			}
 		}
 		return true
 	})
+	for symbol := range FlatSymbols.Values() {
+		resolveExternalSuperclassSymbol(symbol.File, symbol)
+		if symbol.Kind == messages.SymbolKindMethod {
+			resolveExternalSuperMethodSymbol(symbol.File, symbol)
+		}
+	}
+
 	slog.Debug("Bulk parse symbols done")
 	pr.End("Symbols parsed")
 	return nil
@@ -119,14 +129,15 @@ func (f *PythonFile) parseSymbols() ([]*Symbol, error) {
 		return nil, err
 	}
 	symbols := processSymbols(f, qc, query)
+	WorkspaceSymbols.Store(f, symbols)
+	slog.Debug("Symbols for file parsed from the parseSymbols func", slog.String("file", f.Url), slog.Int("symbols", len(symbols)))
 	for _, symbol := range symbols {
 		resolveExternalSuperclassSymbol(f, symbol)
 	}
-	WorkspaceSymbols.Store(f, symbols)
 	for _, symbol := range symbols {
-		flatSymbols.Set(symbol.UUID, symbol)
+		FlatSymbols.Set(symbol.UUID, symbol)
 		for _, children := range symbol.Children {
-			flatSymbols.Set(children.UUID, children)
+			FlatSymbols.Set(children.UUID, children)
 			resolveExternalSuperclassSymbol(f, children)
 			if children.Kind == messages.SymbolKindMethod {
 				resolveExternalSuperMethodSymbol(f, children)
@@ -144,6 +155,14 @@ func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 		var err error
 		symbols, err = f.parseFileSymbols()
 		WorkspaceSymbols.Store(f, symbols)
+		if !f.External {
+			for _, symbol := range symbols {
+				FlatSymbols.Set(symbol.UUID, symbol)
+				for _, children := range symbol.Children {
+					FlatSymbols.Set(children.UUID, children)
+				}
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +184,7 @@ func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 }
 
 func GetWorkspaceSymbols(query string) ([]*Symbol, error) {
-	symbols := slices.Collect(flatSymbols.Values())
+	symbols := slices.Collect(FlatSymbols.Values())
 	if query == "" {
 		return symbols, nil
 	}
@@ -177,7 +196,7 @@ func GetWorkspaceSymbols(query string) ([]*Symbol, error) {
 }
 
 func FindSymbolByPosition(file *PythonFile, line, character uint32) (*Symbol, error) {
-	for symbol := range flatSymbols.Values() {
+	for symbol := range FlatSymbols.Values() {
 		if symbol.File.Url == file.Url &&
 			(symbol.NameRange.Start.Line <= line && symbol.NameRange.End.Line >= line) &&
 			(symbol.NameRange.Start.Character <= character && symbol.NameRange.End.Character >= character) {
@@ -312,9 +331,6 @@ func resolveExternalSuperMethodSymbol(f *PythonFile, symbol *Symbol) *Symbol {
 		return nil
 	}
 	var superObject *Symbol
-	if !f.External {
-		slog.Info("Resolving superclass", slog.String("class", classSymbol.Name), slog.String("method", symbol.Name), slog.Int("superObjects", len(classSymbol.SuperObjects)))
-	}
 	if len(classSymbol.SuperObjects) > 0 {
 		for _, superClassMethod := range classSymbol.SuperObjects[0].Children {
 			if superClassMethod.Name == symbol.Name {
@@ -449,6 +465,39 @@ func processSymbols(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 	}
 	symbols = append(symbols, moduleSymbols...)
 	return symbols
+}
+
+func updateSymbolsInPlace(existingSymbols []*Symbol, newSymbols []*Symbol) {
+	// Create a map of new symbols by name and position for quick lookup
+	newSymbolMap := make(map[string]*Symbol)
+	for _, newSymbol := range newSymbols {
+		key := fmt.Sprintf("%s:%d:%d", newSymbol.Name, newSymbol.NameRange.Start.Line, newSymbol.NameRange.Start.Character)
+		newSymbolMap[key] = newSymbol
+	}
+
+	// Update existing symbols with new data
+	for _, existingSymbol := range existingSymbols {
+		key := fmt.Sprintf("%s:%d:%d", existingSymbol.Name, existingSymbol.NameRange.Start.Line, existingSymbol.NameRange.Start.Character)
+		if newSymbol, found := newSymbolMap[key]; found {
+			// Update all fields except UUID to preserve references
+			existingSymbol.Name = newSymbol.Name
+			existingSymbol.Kind = newSymbol.Kind
+			existingSymbol.Parameters = newSymbol.Parameters
+			existingSymbol.ReturnType = newSymbol.ReturnType
+			existingSymbol.FullName = newSymbol.FullName
+			existingSymbol.Range = newSymbol.Range
+			existingSymbol.NameRange = newSymbol.NameRange
+			existingSymbol.superObjectsNames = newSymbol.superObjectsNames
+
+			// Update children recursively
+			updateSymbolsInPlace(existingSymbol.Children, newSymbol.Children)
+
+			// Update parent relationships for children
+			for _, child := range existingSymbol.Children {
+				child.Parent = existingSymbol
+			}
+		}
+	}
 }
 
 func isChildOf(symbol *Symbol, class *Symbol) bool {
