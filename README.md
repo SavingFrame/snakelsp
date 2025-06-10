@@ -21,9 +21,11 @@
 | `textDocument/didChange`        | `HandleDidChange`        | Tracks document changes |
 | `textDocument/didClose`         | `HandleDidClose`         | Handles document close events |
 | `shutdown`                      | `HandleShutdown`         | Gracefully shuts down the server |
-| `textDocument/definition`       | _Planned_ `HandleGotoDefinition`   | Jumps to the definition of a symbol(Not implemented yet) |
-| `workspace/symbol`              | `HandleWorkspaceSymbol`  | Retrieves all symbols in the workspace |
-| `textDocument/documentSymbol`   | `HandleDocumentSymbol`   | Retrieves document-level symbols |
+| `textDocument/definition`       | _Planned_ `HandleGotoDefinition`   | Jumps to the definition of a symbol (Not implemented yet) |
+| `textDocument/declaration`      | `HandleSymbolDeclaration`          | Jumps to the declaration of a symbol |
+| `textDocument/implementation`   | `HandleSymbolImplementation`       | Jumps to the implementation of a symbol |
+| `workspace/symbol`              | `HandleWorkspaceSymbol`            | Retrieves all symbols in the workspace |
+| `textDocument/documentSymbol`   | `HandleDocumentSymbol`             | Retrieves document-level symbols |
 | `$/cancelRequest`               | _Dummy_ `HandleCancelRequest`    | Handles request cancellations (Placeholder, does nothing currently)|
 | `window/workDoneProgress/create`               | `progress/progress.go`    | Generate notifications for ongoing progress|
 | `$/progress`               | `progress/progress.go`    | Update notifications for ongoing progress|
@@ -83,9 +85,9 @@ end
   - [ ] `workspace/didChangeWatchedFiles` → Handle file changes from outside the editor (e.g., Git updates)
 - [ ] Implement **Go-to Definition** (`textDocument/definition`)
 - [ ] Add **Hover support** (`textDocument/hover`)
-- [ ] **Class Hierarchy Navigation** (like PyCharm)
-  - [ ] **Find subclasses (inheritors)** (`textDocument/typeHierarchy/subtypes`)
-  - [ ] **Find parent classes** (`textDocument/typeHierarchy/supertypes`)
+- [x] **Class Hierarchy Navigation** (like PyCharm)
+  - [x] **Find subclasses (inheritors)** (`textDocument/typeHierarchy/subtypes`)
+  - [x] **Find parent classes** (`textDocument/typeHierarchy/supertypes`)
 - [ ] Optimize performance for large projects
 - [ ] Multi-threaded parsing
 - [ ] **Add Testing**
