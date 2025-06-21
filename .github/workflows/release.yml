@@ -122,10 +122,12 @@ jobs:
           fi
           
           # Set output for release notes using a unique delimiter
-          delimiter="$(openssl rand -hex 8)"
-          echo "changelog<<${delimiter}" >> $GITHUB_OUTPUT
-          cat CHANGELOG.md >> $GITHUB_OUTPUT
-          echo "${delimiter}" >> $GITHUB_OUTPUT
+          delimiter=$(openssl rand -hex 8)
+          {
+              echo "changelog<<$delimiter"
+              sed -e '$a\' CHANGELOG.md
+              echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
