@@ -43,11 +43,6 @@ jobs:
           # macOS ARM64 (Apple Silicon)
           GOOS=darwin GOARCH=arm64 go build -ldflags "$LDFLAGS" -o snakelsp-darwin-arm64 .
           
-          # Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o snakelsp-windows-amd64.exe .
-          
-          # Windows ARM64
-          GOOS=windows GOARCH=arm64 go build -ldflags "$LDFLAGS" -o snakelsp-windows-arm64.exe .
           
 
       - name: Generate changelog
@@ -85,8 +80,6 @@ jobs:
             snakelsp-linux-arm64
             snakelsp-darwin-amd64
             snakelsp-darwin-arm64
-            snakelsp-windows-amd64.exe
-            snakelsp-windows-arm64.exe
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
