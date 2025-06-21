@@ -1,17 +1,33 @@
 # 🐍 SnakeLSP
 
-**SnakeLSP** is a Language Server (LSP) for Python written in Go. It is designed to provide fast and efficient language features by pre-parsing the entire project at startup, improving performance for large-scale Python codebases.
+**SnakeLSP** is a high-performance Language Server (LSP) for Python written in Go, designed to add additional features that basedpyright/pyright doesn't support while providing significant performance improvements for large-scale Python codebases.
 
-## 🚀 Features
+## 🚀 Key Advantages Over Pyright/BasedPyright
 
-- **Performance-oriented**: Parses the full project once at startup, avoiding redundant re-parsing on requests.
-- **Basic LSP support**:
-  - **(Planned) Go-to Definition, Auto-completion, Diagnostics**
-  - **File open, change, and close events**
-  - **Document and workspace symbol retrieval**
-- **Written in Go**: Designed for speed and efficiency compared to Python-based LSP implementations.
+- **⚡ Lightning-fast workspace symbols**: Uses cached values instead of real-time parsing, making workspace symbol requests that take ages in basedpyright nearly instantaneous
+- **🔍 PyCharm-like navigation**: Full support for class/method implementations and definitions, similar to PyCharm's advanced code navigation
+- **🏗️ Smart caching architecture**: Pre-parses the entire project at startup and maintains intelligent caches, eliminating redundant re-parsing on subsequent requests
+- **🚀 Go-powered performance**: Written in Go for superior speed and efficiency compared to Python-based LSP implementations
+
+## 🎯 Features
+
+- **Advanced symbol navigation**:
+  - **Workspace symbols** with instant cached lookups
+  - **Document symbols** with hierarchical structure
+  - **Go-to implementation** for classes and methods
+  - **Go-to declaration** with precise location tracking
+- **Performance optimizations**:
+  - **Single startup parse** of entire project
+  - **Intelligent caching** for all symbol requests
+  - **Multi-threaded processing** (planned)
+- **Standard LSP support**:
+  - **File lifecycle management** (open, change, close events)
+  - **Progress reporting** for long-running operations
 
 ## 📜 Supported LSP Handlers
+
+<details>
+<summary>Click to expand supported LSP methods</summary>
 
 | Method                          | Handler                  | Description |
 |---------------------------------|--------------------------|-------------|
@@ -30,24 +46,84 @@
 | `window/workDoneProgress/create`               | `progress/progress.go`    | Generate notifications for ongoing progress|
 | `$/progress`               | `progress/progress.go`    | Update notifications for ongoing progress|
 
+</details>
+
 ## 🏗️ Installation
 
 ### Prerequisites
 
-- **Go 1.18+** installed
 - **A Language Server Protocol (LSP) client** (VS Code, Neovim, etc.)
 
-### Build & Install
+### Download Latest Release (Recommended)
+
+Download the latest pre-built binary from GitHub releases:
+
+**[📥 Download Latest Release](https://github.com/SavingFrame/snakelsp/releases/latest/)**
+
+1. Download the appropriate binary for your platform
+2. Make it executable: `chmod +x snakelsp`
+3. Move to your PATH: `sudo mv snakelsp /usr/local/bin/`
+
+### Build from Source (Alternative)
+
+If you prefer to build from source:
 
 ```sh
-git clone https://github.com/your_username/snakelsp.git
+# Prerequisites: Go 1.18+ installed
+git clone https://github.com/SavingFrame/snakelsp.git
 cd snakelsp
 go build -o snakelsp
 ```
 
 ### Neovim Configuration
 
-#### LspConfig
+#### Modern Neovim 0.11+ (Recommended)
+
+For Neovim 0.11+, use the built-in LSP configuration:
+
+```lua
+-- Configure SnakeLSP
+vim.lsp.config.snakelsp = {
+  cmd = { 'snakelsp' },
+  filetypes = { 'python' },
+  capabilities = {
+    textDocument = {
+      -- Disable documentSymbol to use basedpyright's implementation
+      documentSymbol = vim.NIL,
+    },
+  },
+  root_markers = {
+    'pyproject.toml',
+    'setup.py',
+    'setup.cfg',
+    'requirements.txt',
+    'Pipfile',
+    'pyrightconfig.json',
+    '.git',
+    '.venv',
+  },
+  init_options = {
+    virtualenv_path = os.getenv('VIRTUAL_ENV'),
+  },
+}
+
+-- Disable conflicting capabilities in basedpyright/pyright
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('snakelsp-setup', { clear = true }),
+  callback = function(event)
+    local client = vim.lsp.get_client_by_id(event.data.client_id)
+    if client and client.name == 'basedpyright' then
+      -- Disable capabilities that SnakeLSP handles better
+      client.server_capabilities.workspaceSymbolProvider = false
+      client.server_capabilities.declarationProvider = false
+    end
+  end,
+})
+
+vim.lsp.enable 'snakelsp'
+```
+
+#### Legacy LspConfig (Neovim < 0.11)
 
 ```lua
 local lspconfig = require("lspconfig")
