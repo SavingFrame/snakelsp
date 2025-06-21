@@ -88,8 +88,16 @@ jobs:
 
       - name: Move binaries to root
         run: |
-          find ./binaries -name "snakelsp-*" -exec mv {} . \;
-          ls -la snakelsp-*
+          # Each artifact creates its own directory, move binaries from subdirectories
+          find ./binaries -type f -name "snakelsp-*" -exec mv {} . \;
+          # Also check for binaries in artifact subdirectories
+          for dir in ./binaries/*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -type f -name "snakelsp-*" -exec mv {} . \;
+            fi
+          done
+          ls -la snakelsp-* || echo "No binaries found, checking directory structure:"
+          find ./binaries -type f -ls
 
       - name: Generate changelog
         id: changelog
