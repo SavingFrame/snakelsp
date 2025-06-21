@@ -10,6 +10,8 @@ import (
 	"snakelsp/server"
 )
 
+
+
 type discardCloser struct {
 	io.Writer
 }

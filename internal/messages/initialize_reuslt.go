@@ -1,6 +1,9 @@
 package messages
 
-import "log/slog"
+import (
+	"log/slog"
+	"snakelsp/internal/version"
+)
 
 type serverInfo struct {
 	Name    string `json:"name"`
@@ -69,7 +72,7 @@ func NewInitializeResult(initializeParam *InitializeParams) *InitializeResult {
 		},
 		ServerInfo: &serverInfo{
 			Name:    "SnakeLSP",
-			Version: "0.0.1",
+			Version: version.Get(),
 		},
 	}
 }

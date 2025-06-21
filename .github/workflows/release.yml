@@ -27,17 +27,27 @@ jobs:
 
       - name: Build binaries
         run: |
+          # Extract version from tag (remove 'v' prefix)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          LDFLAGS="-X snakelsp/internal/version.Version=$VERSION"
+          
           # Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -o snakelsp-linux-amd64 .
+          GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o snakelsp-linux-amd64 .
           
           # Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -o snakelsp-linux-arm64 .
+          GOOS=linux GOARCH=arm64 go build -ldflags "$LDFLAGS" -o snakelsp-linux-arm64 .
           
           # macOS AMD64
-          GOOS=darwin GOARCH=amd64 go build -o snakelsp-darwin-amd64 .
+          GOOS=darwin GOARCH=amd64 go build -ldflags "$LDFLAGS" -o snakelsp-darwin-amd64 .
           
           # macOS ARM64 (Apple Silicon)
-          GOOS=darwin GOARCH=arm64 go build -o snakelsp-darwin-arm64 .
+          GOOS=darwin GOARCH=arm64 go build -ldflags "$LDFLAGS" -o snakelsp-darwin-arm64 .
+          
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o snakelsp-windows-amd64.exe .
+          
+          # Windows ARM64
+          GOOS=windows GOARCH=arm64 go build -ldflags "$LDFLAGS" -o snakelsp-windows-arm64.exe .
           
 
       - name: Generate changelog
@@ -75,6 +85,8 @@ jobs:
             snakelsp-linux-arm64
             snakelsp-darwin-amd64
             snakelsp-darwin-arm64
+            snakelsp-windows-amd64.exe
+            snakelsp-windows-arm64.exe
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
