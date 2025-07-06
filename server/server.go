@@ -1,3 +1,6 @@
+// Package server provides the core LSP server implementation.
+// It handles server initialization, connection management, and request routing
+// for the SnakeLSP language server.
 package server
 
 import (

@@ -1,3 +1,6 @@
+// Package request provides client and request handling utilities for LSP communication.
+// It wraps JSON-RPC connections and provides convenient methods for making
+// requests and notifications to LSP clients.
 package request
 
 import (

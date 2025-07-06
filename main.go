@@ -1,3 +1,6 @@
+// Package main provides the entry point for the SnakeLSP language server.
+// It initializes logging, Sentry error tracking, and starts the LSP server
+// over stdio for Python language support.
 package main
 
 import (
@@ -8,9 +11,11 @@ import (
 
 	"snakelsp/debug_server"
 	"snakelsp/server"
+
+	"github.com/getsentry/sentry-go"
 )
 
-
+var sentryDSN string
 
 type discardCloser struct {
 	io.Writer
@@ -37,7 +42,20 @@ func initializeLogs() (io.WriteCloser, error) {
 	return f, nil
 }
 
+func initializeSentry() {
+	if sentryDSN == "" {
+		return
+	}
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: sentryDSN,
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+}
+
 func main() {
+	initializeSentry()
 	go debug_server.StartHTTPServer("127.0.0.1:8051")
 	stdio := server.NewStdio(nil, nil)
 	f, err := initializeLogs()

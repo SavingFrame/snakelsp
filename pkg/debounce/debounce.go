@@ -1,3 +1,6 @@
+// Package debounce provides a debouncing utility for rate-limiting function calls.
+// It allows delaying function execution until a specified timeout has passed
+// without additional calls, useful for handling rapid file change events.
 package debounce
 
 import (

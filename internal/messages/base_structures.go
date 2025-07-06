@@ -1,3 +1,6 @@
+// Package messages defines the core data structures and types used in the
+// Language Server Protocol (LSP) communication. It provides type definitions
+// for positions, ranges, URIs, and other fundamental LSP message components.
 package messages
 
 import "encoding/json"

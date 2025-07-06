@@ -1,7 +1,9 @@
 # SnakeLSP Development Context
 
 ## Build/Test Commands
+
 - **Build**: `go build -o snakelsp`
+- **Build with Sentry**: `go build -ldflags "-X main.sentryDSN=$SENTRY_DSN" -o snakelsp`
 - **Run**: `./snakelsp` (LSP server via stdio)
 - **Test all**: `go test ./...`
 - **Test single package**: `go test ./internal/workspace`
@@ -10,6 +12,7 @@
 - **Vet**: `go vet ./...`
 
 ## Code Style Guidelines
+
 - **Package naming**: lowercase, single word (e.g., `workspace`, `protocol`, `messages`)
 - **Imports**: Group stdlib, third-party, local packages with blank lines between groups
 - **Types**: PascalCase for exported, camelCase for unexported

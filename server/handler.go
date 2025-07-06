@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"log"
+
 	"snakelsp/internal/protocol"
 	"snakelsp/internal/request"
 
@@ -25,7 +26,10 @@ func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Reque
 	}
 	switch r.Method {
 	case "exit":
-		protocol.Handlers[r.Method](&context)
+		handler, exists := protocol.Handlers[r.Method]
+		if exists {
+			handler(&context)
+		}
 		err := c.Close()
 		return nil, err
 	default:

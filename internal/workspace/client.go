@@ -1,3 +1,6 @@
+// Package workspace handles Python workspace analysis and symbol extraction.
+// It provides functionality for parsing Python files, extracting symbols,
+// managing workspace state, and handling virtual environment paths for the LSP server.
 package workspace
 
 import (

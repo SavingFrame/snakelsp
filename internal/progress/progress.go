@@ -1,3 +1,6 @@
+// Package progress provides work-done progress reporting functionality for LSP operations.
+// It implements the LSP work done progress protocol to show progress indicators
+// to clients during long-running operations.
 package progress
 
 import (
