@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"sync"
 
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -28,6 +29,35 @@ type Request struct {
 	Context context.Context
 	Client  *Client
 	Logger  *slog.Logger
+	ID      any // Request ID for cancellation tracking
+}
+
+var (
+	activeRequests = make(map[any]context.CancelFunc)
+	requestsMutex  sync.RWMutex
+)
+
+func RegisterRequest(id any, cancel context.CancelFunc) {
+	requestsMutex.Lock()
+	defer requestsMutex.Unlock()
+	activeRequests[id] = cancel
+}
+
+func CancelRequest(id any) bool {
+	requestsMutex.Lock()
+	defer requestsMutex.Unlock()
+	if cancel, exists := activeRequests[id]; exists {
+		cancel()
+		delete(activeRequests, id)
+		return true
+	}
+	return false
+}
+
+func UnregisterRequest(id any) {
+	requestsMutex.Lock()
+	defer requestsMutex.Unlock()
+	delete(activeRequests, id)
 }
 
 func (c *Client) Notify(method string, params any) {

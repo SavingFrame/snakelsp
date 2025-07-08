@@ -221,7 +221,6 @@ func filterSymbols(symbols []*Symbol, query string) ([]*Symbol, error) {
 	for _, symbol := range symbols {
 		names = append(names, symbol.SymbolNameWithParent())
 	}
-	slog.Debug("Names", "names", names)
 	// Perform fuzzy matching on names
 	matchedNames := fuzzy.FindFold(query, names)
 

@@ -113,3 +113,10 @@ type (
 	ResourceOperationKind string
 	FailureHandlingKind   string
 )
+
+type CancelParams struct {
+	/**
+	 * The request id to cancel.
+	 */
+	ID IntegerOrString `json:"id"`
+}
