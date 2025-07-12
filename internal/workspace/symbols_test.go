@@ -348,17 +348,17 @@ func TestFilterSymbols(t *testing.T) {
 	}
 
 	// Test filtering with query
-	filtered, err := filterSymbols(symbols, "Test")
+	filtered, err := FilterSymbols(symbols, "Test")
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(filtered), 2)
 
 	// Test filtering with empty query - fuzzy search returns all items for empty query
-	filtered, err = filterSymbols(symbols, "")
+	filtered, err = FilterSymbols(symbols, "")
 	assert.NoError(t, err)
 	assert.Len(t, filtered, 3) // fuzzy.FindFold returns all items for empty query
 
 	// Test filtering with specific match
-	filtered, err = filterSymbols(symbols, "TestFunction")
+	filtered, err = FilterSymbols(symbols, "TestFunction")
 	assert.NoError(t, err)
 	if len(filtered) > 0 {
 		assert.Equal(t, "TestFunction", filtered[0].Name)

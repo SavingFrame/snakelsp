@@ -176,7 +176,7 @@ func (f *PythonFile) FileSymbols(query string) ([]*Symbol, error) {
 	if query == "" {
 		return symbols, nil
 	}
-	symbols, err := filterSymbols(symbols, query)
+	symbols, err := FilterSymbols(symbols, query)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func GetWorkspaceSymbols(query string) ([]*Symbol, error) {
 	if query == "" {
 		return symbols, nil
 	}
-	symbols, err := filterSymbols(symbols, query)
+	symbols, err := FilterSymbols(symbols, query)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (s *Symbol) SymbolNameWithParent() string {
 	return fmt.Sprintf("%s.%s", s.Parent.Name, s.FullName)
 }
 
-func filterSymbols(symbols []*Symbol, query string) ([]*Symbol, error) {
+func FilterSymbols(symbols []*Symbol, query string) ([]*Symbol, error) {
 	var filteredSymbols []*Symbol
 
 	// Collect all symbol names into a slice

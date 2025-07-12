@@ -8,7 +8,7 @@ import (
 	"snakelsp/internal/request"
 )
 
-func HandleCancelRequest(r *request.Request) (interface{}, error) {
+func HandleCancelRequest(r *request.Request) (any, error) {
 	var params messages.CancelParams
 	err := json.Unmarshal(r.Params, &params)
 	if err != nil {

@@ -80,6 +80,8 @@ type WorkspaceSymbolParams struct {
 	 * A query string to filter symbols by. Clients may send an empty
 	 * string here to request all symbols.
 	 */
+	WorkDoneProgressParams
+	PartialResultParams
 	Query string `json:"query"`
 }
 
