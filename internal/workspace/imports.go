@@ -82,7 +82,7 @@ func resolveImportSymbol(file *PythonFile, imp *Import) (*Symbol, error) {
 	// slog.Debug("Resolve import symbol for file", slog.String("fileUrl", file.Url), slog.String("importedName", imp.ImportedName), slog.String("sourceModule", imp.SourceModule))
 	module := strings.ReplaceAll(imp.SourceModule, ".", string(filepath.Separator))
 	var moduleFile string
-	for _, workspaceRoot := range ClientSettings.ModulesPath() {
+	for _, workspaceRoot := range ClientSettings.ModulesPath {
 		path := filepath.Join(workspaceRoot, module)
 
 		// Try as a module: foo/bar.py
@@ -140,7 +140,6 @@ func resolveImportSymbol(file *PythonFile, imp *Import) (*Symbol, error) {
 	}
 	for _, nestedImport := range imports {
 		if nestedImport.ImportedName == imp.ImportedName {
-			slog.Debug("Found nested import", slog.String("importedName", nestedImport.ImportedName), slog.String("sourceModule", nestedImport.SourceModule))
 			return resolveImportSymbol(file, &nestedImport)
 		}
 	}
@@ -177,11 +176,10 @@ func processImports(pythonFile *PythonFile, qc *tree_sitter.QueryCursor, query *
 			}
 			if withResolvedSymbols {
 				symbol, err := resolveImportSymbol(pythonFile, &i)
-				if err != nil {
-					slog.Warn("Error finding import symbol", slog.String("sourceModule", sourceModule), slog.Any("error", err))
-				} else {
+				if err == nil {
 					i.Symbol = symbol
 					i.PythonFile = symbol.File
+
 				}
 			}
 
