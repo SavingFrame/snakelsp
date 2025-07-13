@@ -18,14 +18,10 @@ func HandleInitialize(r *request.Request) (any, error) {
 		r.Logger.Error("Unmarshalling error: %v", slog.Any("error", err))
 		return nil, err
 	}
-	userSettings := &workspace.ClientSettingsType{
-		VirtualEnvPath: data.InitializationOptions.VirtualEnvPath,
-		WorkspaceRoot:  data.RootPath,
-	}
-	workspace.ClientSettings = *userSettings
 	if data.RootPath == "" {
 		return nil, fmt.Errorf("rootPath is required")
 	}
+	workspace.SetClientSettings(data.InitializationOptions.VirtualEnvPath, data.RootPath)
 
 	go func() {
 		filesProgress := progress.NewWorkDone(r.Client)
