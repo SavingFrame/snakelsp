@@ -37,7 +37,6 @@ func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Reque
 		if !exists {
 			err := &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: "Method not found"}
 			if err := c.ReplyWithError(ctx, r.ID, err); err != nil {
-				log.Println(err)
 				return nil, err
 			}
 			return nil, err
@@ -46,7 +45,6 @@ func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Reque
 		if err != nil {
 			err := &jsonrpc2.Error{Code: jsonrpc2.CodeInternalError, Message: err.Error()}
 			if err := c.ReplyWithError(ctx, r.ID, err); err != nil {
-				log.Println(err)
 				return nil, err
 			}
 			return result, nil
@@ -57,5 +55,5 @@ func (s *Server) handle(ctx context.Context, c *jsonrpc2.Conn, r *jsonrpc2.Reque
 }
 
 func (s *Server) newHandler() jsonrpc2.Handler {
-	return jsonrpc2.HandlerWithError(s.handle)
+	return jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(s.handle))
 }
